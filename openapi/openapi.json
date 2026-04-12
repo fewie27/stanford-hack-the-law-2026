@@ -54,9 +54,77 @@
         }
       }
     },
+    "/v1/evidence/metadata": {
+      "post": {
+        "summary": "Retrieve capture metadata (IP, timestamp, source URL) using an evidence code",
+        "operationId": "evidence_metadata_v1_evidence_metadata_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrieveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceMetadataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/evidence/retrieve": {
       "post": {
-        "summary": "Retrieve decrypted screenshot and metadata using an evidence code",
+        "summary": "Retrieve decrypted PNG screenshot using an evidence code (metadata: POST /v1/evidence/metadata)",
         "operationId": "evidence_retrieve_v1_evidence_retrieve_post",
         "requestBody": {
           "content": {
@@ -184,6 +252,45 @@
         ],
         "title": "ErrorBody"
       },
+      "EvidenceMetadataResponse": {
+        "properties": {
+          "source_url": {
+            "type": "string",
+            "title": "Source Url",
+            "description": "URL that was captured."
+          },
+          "captured_at": {
+            "type": "string",
+            "title": "Captured At",
+            "description": "ISO 8601 UTC timestamp when the evidence was captured."
+          },
+          "client_ip": {
+            "type": "string",
+            "title": "Client Ip",
+            "description": "Client IP seen at capture time (from X-Forwarded-For or direct)."
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent",
+            "description": "User-Agent header at capture time, if any."
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_url",
+          "captured_at",
+          "client_ip"
+        ],
+        "title": "EvidenceMetadataResponse",
+        "description": "Metadata stored at capture time (client IP, UTC timestamp, source URL)."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -234,13 +341,6 @@
           "type": {
             "type": "string",
             "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
           }
         },
         "type": "object",

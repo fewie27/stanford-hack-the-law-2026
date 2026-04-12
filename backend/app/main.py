@@ -1,9 +1,7 @@
-import base64
 import datetime as dt
-import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,6 +30,15 @@ class CaptureResponse(BaseModel):
 
 class RetrieveRequest(BaseModel):
     code: str = Field(description="Evidence code returned from capture (XXXX-YYYYYYYY).")
+
+
+class EvidenceMetadataResponse(BaseModel):
+    """Metadata stored at capture time (client IP, UTC timestamp, source URL)."""
+
+    source_url: str = Field(description="URL that was captured.")
+    captured_at: str = Field(description="ISO 8601 UTC timestamp when the evidence was captured.")
+    client_ip: str = Field(description="Client IP seen at capture time (from X-Forwarded-For or direct).")
+    user_agent: str | None = Field(default=None, description="User-Agent header at capture time, if any.")
 
 
 class ErrorBody(BaseModel):
@@ -80,6 +87,28 @@ def get_browser(request: Request) -> Browser:
 BrowserDep = Annotated[Browser, Depends(get_browser)]
 
 
+def _decrypt_evidence_archive(body: RetrieveRequest) -> tuple[dict[str, Any], bytes]:
+    try:
+        record_id, unlock_key = parse_code(body.code)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    encrypted = read_vault(record_id)
+    if encrypted is None:
+        raise HTTPException(status_code=404, detail="No evidence found for that record id.")
+
+    try:
+        plain = decrypt_blob(unlock_key, encrypted)
+    except Exception:
+        raise HTTPException(status_code=403, detail="Decryption failed; check your key.") from None
+
+    try:
+        return parse_uncompressed_tar(plain)
+    except Exception as e:
+        logger.exception("Corrupt vault contents")
+        raise HTTPException(status_code=500, detail=f"Stored archive is invalid: {e}") from e
+
+
 @app.post(
     "/v1/evidence/capture",
     response_model=CaptureResponse,
@@ -125,6 +154,22 @@ async def evidence_capture(body: CaptureRequest, request: Request, browser: Brow
 
 
 @app.post(
+    "/v1/evidence/metadata",
+    response_model=EvidenceMetadataResponse,
+    responses={400: {"model": ErrorBody}, 403: {"model": ErrorBody}, 404: {"model": ErrorBody}},
+    summary="Retrieve capture metadata (IP, timestamp, source URL) using an evidence code",
+)
+async def evidence_metadata(body: RetrieveRequest):
+    meta, _png = _decrypt_evidence_archive(body)
+    return EvidenceMetadataResponse(
+        source_url=meta["source_url"],
+        captured_at=meta["captured_at"],
+        client_ip=meta["client_ip"],
+        user_agent=meta.get("user_agent"),
+    )
+
+
+@app.post(
     "/v1/evidence/retrieve",
     responses={
         200: {"content": {"image/png": {}}},
@@ -132,32 +177,12 @@ async def evidence_capture(body: CaptureRequest, request: Request, browser: Brow
         403: {"model": ErrorBody},
         404: {"model": ErrorBody},
     },
-    summary="Retrieve decrypted screenshot and metadata using an evidence code",
+    summary="Retrieve decrypted PNG screenshot using an evidence code (metadata: POST /v1/evidence/metadata)",
 )
 async def evidence_retrieve(body: RetrieveRequest):
-    try:
-        record_id, unlock_key = parse_code(body.code)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+    _meta, png = _decrypt_evidence_archive(body)
 
-    encrypted = read_vault(record_id)
-    if encrypted is None:
-        raise HTTPException(status_code=404, detail="No evidence found for that record id.")
-
-    try:
-        plain = decrypt_blob(unlock_key, encrypted)
-    except Exception:
-        raise HTTPException(status_code=403, detail="Decryption failed; check your key.") from None
-
-    try:
-        meta, png = parse_uncompressed_tar(plain)
-    except Exception as e:
-        logger.exception("Corrupt vault contents")
-        raise HTTPException(status_code=500, detail=f"Stored archive is invalid: {e}") from e
-
-    meta_json = json.dumps(meta, ensure_ascii=False).encode("utf-8")
     headers = {
-        "X-Evidence-Metadata": base64.standard_b64encode(meta_json).decode("ascii"),
         "Content-Disposition": 'inline; filename="evidence.png"',
     }
 

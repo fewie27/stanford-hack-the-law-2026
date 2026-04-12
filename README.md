@@ -30,7 +30,8 @@ Docker: `docker build -t evidence-api ./backend` then run with a volume mounted 
 | Method | Path | Purpose |
 |--------|------|--------|
 | `POST` | `/v1/evidence/capture` | JSON `{"url": "https://..."}` → returns `{"code": "XXXX-YYYYYYYY"}` (4-char id + 8-char key). |
-| `POST` | `/v1/evidence/retrieve` | JSON `{"code": "XXXX-YYYYYYYY"}` → PNG body; metadata is in the `X-Evidence-Metadata` header (base64 JSON). |
+| `POST` | `/v1/evidence/retrieve` | JSON `{"code": "XXXX-YYYYYYYY"}` → PNG body (screenshot only). |
+| `POST` | `/v1/evidence/metadata` | Same JSON body → JSON with `source_url`, `captured_at` (UTC ISO), `client_ip`, and optional `user_agent` from capture. |
 
 The server does not keep decrypted archives on disk; decryption happens in memory for each retrieve request.
 

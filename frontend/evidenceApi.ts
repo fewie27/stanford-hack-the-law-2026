@@ -26,3 +26,60 @@ export function isProductionEvidenceApi(): boolean {
   const raw = readExtra().evidenceApiBaseUrl;
   return typeof raw === "string" && raw.trim().length > 0;
 }
+
+/** Metadata returned by `POST /v1/evidence/metadata` (capture-time IP and timestamp). */
+export type EvidenceMetadata = {
+  source_url: string;
+  captured_at: string;
+  client_ip: string;
+  user_agent: string | null;
+};
+
+export async function fetchEvidenceMetadata(
+  code: string,
+  baseUrl: string = getEvidenceApiBaseUrl()
+): Promise<EvidenceMetadata> {
+  const url = `${baseUrl.replace(/\/$/, "")}/v1/evidence/metadata`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let detail = text;
+    try {
+      const j = JSON.parse(text) as { detail?: string };
+      if (typeof j.detail === "string") detail = j.detail;
+    } catch {
+      /* use raw */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return JSON.parse(text) as EvidenceMetadata;
+}
+
+/** Decrypted PNG bytes from `POST /v1/evidence/retrieve`. */
+export async function fetchEvidenceImage(
+  code: string,
+  baseUrl: string = getEvidenceApiBaseUrl()
+): Promise<Blob> {
+  const url = `${baseUrl.replace(/\/$/, "")}/v1/evidence/retrieve`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let detail = text;
+    try {
+      const j = JSON.parse(text) as { detail?: string };
+      if (typeof j.detail === "string") detail = j.detail;
+    } catch {
+      /* use raw */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return res.blob();
+}
