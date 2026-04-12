@@ -110,13 +110,16 @@ function LawyerCards({ idPrefix }: { idPrefix: string }) {
   );
 }
 
+/** Formats ISO timestamp in the viewer's local timezone (browser default). */
 function formatCapturedAt(iso: string): string {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
-    return (
-      d.toLocaleString(undefined, { timeZone: 'UTC' }) + ' UTC'
-    );
+    return d.toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'medium',
+      timeZoneName: 'short',
+    });
   } catch {
     return iso;
   }
@@ -323,7 +326,7 @@ export default function App() {
                   </div>
 
                   <div className={`${PANEL_INNER} p-3`}>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Sealed at (UTC)</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Sealed at</p>
                     <p className="mt-1 font-mono text-sm text-slate-100">
                       {formatCapturedAt(previewMetadata.captured_at)}
                     </p>
@@ -508,8 +511,8 @@ export default function App() {
 
   if (view === 'create') {
     return (
-      <div className={`${PAGE_BG} flex min-h-screen flex-col`}>
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8">
+      <div className={`${PAGE_BG} min-h-screen`}>
+        <div className="mx-auto flex w-full max-w-2xl flex-col px-5 py-8 sm:px-8 pb-12">
           <header className="mb-8 flex items-center justify-between gap-3 border-b border-slate-800/80 pb-6">
             <div className="flex items-center gap-2 text-slate-300">
               <VaultLockIcon className="h-5 w-5 shrink-0 text-slate-500" />
@@ -542,7 +545,7 @@ export default function App() {
             ))}
           </div>
 
-          <div className="mb-8 min-h-0 flex-1 overflow-y-auto">{renderStep()}</div>
+          <div className="mb-8">{renderStep()}</div>
 
           <div className="flex gap-3 border-t border-slate-800/80 pt-6">
             <button
@@ -572,55 +575,69 @@ export default function App() {
   if (view === 'access') {
     if (codeSubmitted && accessMetadata && accessImageUrl) {
       return (
-        <div className={`${PAGE_BG} flex min-h-screen flex-col items-center px-4 py-10 sm:px-8`}>
-          <div className="w-full max-w-lg">
-            <div className="mb-6 flex items-center gap-2 text-slate-500">
-              <VaultLockIcon className="h-5 w-5" />
-              <span className="text-xs font-semibold uppercase tracking-[0.2em]">Unsealed view</span>
-            </div>
-
-            <h1 className="text-2xl font-bold tracking-tight text-white">Retrieved evidence</h1>
-            <p className="mt-1 text-sm text-slate-400">Decrypted from your vault using the code you entered.</p>
-
-            <div className={`${PANEL} mt-6 overflow-hidden p-2`}>
-              <div className={`${PANEL_INNER} overflow-hidden`}>
-                <img
-                  src={accessImageUrl}
-                  alt="Stored evidence"
-                  className="max-h-80 w-full bg-black object-contain"
-                />
+        <div className={`${PAGE_BG} min-h-screen px-4 py-8 sm:px-8 sm:py-10`}>
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="mb-2 flex items-center gap-2 text-slate-500">
+                  <VaultLockIcon className="h-5 w-5" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em]">Unsealed view</span>
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Retrieved evidence</h1>
+                <p className="mt-1 max-w-xl text-sm text-slate-400">
+                  Decrypted from your vault using the code you entered. On a wide screen, the image stays large with
+                  details beside it.
+                </p>
               </div>
             </div>
 
-            <div className="mb-8 mt-6 space-y-3 text-left">
-              <div className={`${PANEL} p-4`}>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Source</p>
-                <p className="mt-1 break-all font-mono text-sm text-slate-100">{accessMetadata.source_url}</p>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start lg:gap-8">
+              <div className="lg:col-span-7 xl:col-span-8">
+                <div className={`${PANEL} p-2`}>
+                  <div
+                    className={`${PANEL_INNER} flex min-h-[min(280px,50vh)] items-center justify-center bg-black/90`}
+                  >
+                    <img
+                      src={accessImageUrl}
+                      alt="Stored evidence"
+                      className="h-auto w-full max-h-[min(85vh,920px)] object-contain"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className={`${PANEL} p-4`}>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Sealed at (UTC)</p>
-                <p className="mt-1 font-mono text-sm text-slate-100">{formatCapturedAt(accessMetadata.captured_at)}</p>
-              </div>
-              <div className={`${PANEL} p-4`}>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Client IP (at capture)</p>
-                <p className="mt-1 font-mono text-sm text-slate-100">{accessMetadata.client_ip}</p>
-              </div>
-              <div className={`${PANEL} p-4`}>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">User-Agent</p>
-                <p className="mt-1 break-all font-mono text-xs text-slate-300">{accessMetadata.user_agent ?? '—'}</p>
+
+              <div className="flex flex-col gap-3 lg:col-span-5 xl:col-span-4 lg:max-h-[min(85vh,920px)] lg:overflow-y-auto lg:pr-1">
+                <div className={`${PANEL} p-4`}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Source</p>
+                  <p className="mt-1 break-all font-mono text-sm text-slate-100">{accessMetadata.source_url}</p>
+                </div>
+                <div className={`${PANEL} p-4`}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Sealed at</p>
+                  <p className="mt-1 font-mono text-sm leading-relaxed text-slate-100">
+                    {formatCapturedAt(accessMetadata.captured_at)}
+                  </p>
+                </div>
+                <div className={`${PANEL} p-4`}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Client IP (at capture)</p>
+                  <p className="mt-1 font-mono text-sm text-slate-100">{accessMetadata.client_ip}</p>
+                </div>
+                <div className={`${PANEL} p-4`}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">User-Agent</p>
+                  <p className="mt-1 break-all font-mono text-xs text-slate-300">{accessMetadata.user_agent ?? '—'}</p>
+                </div>
+
+                <button
+                  type="button"
+                  className="w-full shrink-0 rounded-xl border border-slate-600/80 bg-slate-900/50 py-3.5 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900/80"
+                  onClick={() => {
+                    setView('home');
+                    resetAccessState();
+                  }}
+                >
+                  Back to home
+                </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              className="w-full rounded-xl border border-slate-600/80 bg-slate-900/50 py-3.5 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900/80"
-              onClick={() => {
-                setView('home');
-                resetAccessState();
-              }}
-            >
-              Back to home
-            </button>
           </div>
         </div>
       );
