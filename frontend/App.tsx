@@ -12,8 +12,6 @@ export default function App() {
         <Text style={styles.title}>Hackathon Template</Text>
         <Text style={styles.subtitle}>
           Hello World!{' '}
-          <Text style={styles.mono}>frontend/App.tsx</Text> and run{' '}
-          <Text style={styles.mono}>cd frontend && npm run web</Text> locally.
         </Text>
       </View>
       <StatusBar style="light" />
