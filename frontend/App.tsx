@@ -728,7 +728,7 @@ export default function App() {
         <img
           src="/icon.png"
           alt=""
-          className="mx-auto mb-6 block h-10 w-auto max-w-[min(100%,22rem)] object-contain opacity-95"
+          className="mx-auto mb-0 block h-60 w-auto max-w-[min(100%,22rem)] object-contain opacity-95"
         />
 
         <h1 className="text-xl font-semibold tracking-tight text-slate-100">Seal a page or an image</h1>
