@@ -275,7 +275,6 @@ def classify_url(url: str) -> dict:
             "category": "other",
             "confidence": 0.0,
             "summary": f"Classification failed — raw response: {raw[:200]}",
-            "sensitivity": "low",
             "suggested_tags": [],
         }
  
