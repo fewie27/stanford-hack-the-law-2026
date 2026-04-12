@@ -93,7 +93,7 @@ async def evidence_capture(body: CaptureRequest, request: Request, browser: Brow
     except UnsafeUrlError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    captured_at = dt.datetime.now(dt.UTC).isoformat()
+    captured_at = dt.datetime.now(dt.timezone.utc).isoformat()
     ip = client_ip(request)
     ua = request.headers.get("user-agent")
 
