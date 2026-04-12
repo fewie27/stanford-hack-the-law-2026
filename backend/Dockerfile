@@ -7,6 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY classifier ./classifier
 
 ENV EVIDENCE_DATA_DIR=/data/vaults
 RUN mkdir -p /data/vaults
