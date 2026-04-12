@@ -11,7 +11,7 @@ export default function App() {
         <Text style={styles.badge}>React Native · Web</Text>
         <Text style={styles.title}>Hackathon Template</Text>
         <Text style={styles.subtitle}>
-          A minimal Expo site served from Docker on port 80. Edit{' '}
+          Hello World!{' '}
           <Text style={styles.mono}>frontend/App.tsx</Text> and run{' '}
           <Text style={styles.mono}>cd frontend && npm run web</Text> locally.
         </Text>
