@@ -3,6 +3,24 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        EVIDENCE_API_BASE_URL: ${EVIDENCE_API_BASE_URL:-}
     ports:
       - "80:80"
     restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      EVIDENCE_DATA_DIR: /data/vaults
+      EVIDENCE_APP_PEPPER: ${EVIDENCE_APP_PEPPER:-change-me-in-production}
+    volumes:
+      - evidence_vaults:/data/vaults
+    restart: unless-stopped
+
+volumes:
+  evidence_vaults:

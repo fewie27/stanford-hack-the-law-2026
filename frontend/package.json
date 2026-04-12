@@ -10,7 +10,9 @@
     "export:web": "expo export --platform web"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "expo": "~54.0.33",
+    "expo-constants": "~18.0.13",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",

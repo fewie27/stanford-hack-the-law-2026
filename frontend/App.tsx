@@ -1,9 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
+import { getEvidenceApiBaseUrl, isProductionEvidenceApi } from './evidenceApi';
+
 export default function App() {
   const { width } = useWindowDimensions();
   const isWide = width >= 640;
+  const apiBase = getEvidenceApiBaseUrl();
+  const apiMode = isProductionEvidenceApi() ? 'Server API' : 'Local dev (localhost:8000)';
 
   return (
     <View style={styles.root}>
@@ -11,7 +15,10 @@ export default function App() {
         <Text style={styles.badge}>React Native · Web</Text>
         <Text style={styles.title}>Hackathon Template</Text>
         <Text style={styles.subtitle}>
-          Hello World!{' '}
+          API: {apiMode}
+        </Text>
+        <Text style={[styles.subtitle, styles.mono]} selectable>
+          {apiBase}
         </Text>
       </View>
       <StatusBar style="light" />

@@ -2,6 +2,8 @@
 
 ssh/
 
+.env
+
 # dependencies
 node_modules/
 
@@ -35,8 +37,16 @@ yarn-error.*
 # local env files
 .env*.local
 
+# local npm cache (e.g. when using npm install --cache ./.npm-cache)
+.npm-cache/
+frontend/.npm-cache/
+
 # typescript
 *.tsbuildinfo
+
+# backend evidence vault (local)
+backend/data/
+backend/.venv/
 
 # generated native folders
 /ios
