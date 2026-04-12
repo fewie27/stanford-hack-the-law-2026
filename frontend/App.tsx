@@ -1,6 +1,5 @@
 import './global.css';
 import { useCallback, useState } from 'react';
-const logo = require('./assets/icon.png');
 
 import {
   captureEvidenceUrl,
@@ -542,7 +541,7 @@ export default function App() {
   return (
     <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8">
       <div className="bg-slate-800 p-12 rounded-lg max-w-md w-full text-center">
-        <img src={logo} alt="Logo" className="w-20 h-20 mx-auto mb-6" />
+        <img src="/icon.png" alt="Logo" className="w-20 h-20 mx-auto mb-6" />
         <h1 className="text-3xl font-bold text-white mb-2">Hi, we're sorry for what happened.</h1>
         <p className="text-gray-300 mb-2">Let us help.</p>
         <p className="text-xs text-slate-500 mb-8 font-mono break-all">{apiBase}</p>
