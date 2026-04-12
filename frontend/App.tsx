@@ -14,9 +14,101 @@ type FormData = {
   url: string;
 };
 
-type View = 'home' | 'create' | 'access' | 'lawyers';
+type View = 'home' | 'create' | 'access';
 
 const CREATE_STEP_LABELS = ['Screenshot', 'Analysis', 'Review'] as const;
+
+/** Shared shell + panels — matches home (gradient, glass, subtle ring). */
+const PAGE_BG =
+  'min-h-screen w-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100';
+const PANEL =
+  'rounded-2xl border border-slate-700/80 bg-slate-900/60 shadow-xl shadow-slate-950/50 backdrop-blur-sm ring-1 ring-white/5';
+const PANEL_INNER = 'rounded-xl border border-slate-600/50 bg-slate-950/40';
+
+type LawyerProfile = {
+  name: string;
+  focus: string;
+  hint: string;
+  initial: string;
+  accent: string;
+  avatar: string;
+};
+
+const LAWYERS: LawyerProfile[] = [
+  {
+    name: 'Sarah Martinez, Esq.',
+    focus: 'Cybercrime & digital rights',
+    hint: 'Warm, clear guidance when content was shared or altered online.',
+    initial: 'SM',
+    accent: 'border-l-amber-500/70',
+    avatar: 'bg-amber-500/15 text-amber-100 ring-1 ring-amber-400/25',
+  },
+  {
+    name: 'James Chen, Esq.',
+    focus: 'Media law & defamation',
+    hint: 'Helps you understand options before anything is filed.',
+    initial: 'JC',
+    accent: 'border-l-sky-500/70',
+    avatar: 'bg-sky-500/15 text-sky-100 ring-1 ring-sky-400/25',
+  },
+  {
+    name: 'Rachel Thompson, Esq.',
+    focus: 'AI & deepfake litigation',
+    hint: 'Experience with synthetic media and authenticity questions.',
+    initial: 'RT',
+    accent: 'border-l-violet-500/70',
+    avatar: 'bg-violet-500/15 text-violet-100 ring-1 ring-violet-400/25',
+  },
+];
+
+function VaultLockIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 14.5v1.5M8 10V8a4 4 0 118 0v2m-9 9h10a2 2 0 002-2v-6a2 2 0 00-2-2H7a2 2 0 00-2 2v6a2 2 0 002 2z"
+        className="stroke-current"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LawyerCards({ idPrefix }: { idPrefix: string }) {
+  return (
+    <div className="space-y-3">
+      {LAWYERS.map((L, i) => (
+        <div
+          key={L.name}
+          className={`${PANEL} flex gap-4 border-l-4 p-4 text-left transition hover:bg-slate-900/75 ${L.accent}`}
+        >
+          <div
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${L.avatar}`}
+            aria-hidden
+          >
+            {L.initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-white">{L.name}</p>
+            <p className="text-sm text-slate-400">{L.focus}</p>
+            <p className="mt-2 text-sm leading-snug text-slate-300">{L.hint}</p>
+            <p className="mt-2 text-xs font-medium text-emerald-400/90">
+              Free initial consultation
+            </p>
+            <button
+              type="button"
+              id={`${idPrefix}-lawyer-${i}`}
+              className="mt-3 text-sm font-medium text-sky-400/95 underline-offset-4 hover:text-sky-300 hover:underline"
+            >
+              Request intro
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function formatCapturedAt(iso: string): string {
   try {
@@ -200,41 +292,51 @@ export default function App() {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white">Screenshot Preview</h2>
-            <p className="text-sm text-gray-300 mb-4">
-              Review the screenshot and metadata returned from the Evidence Locker API.
-            </p>
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-white">Sealed preview</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Review the image and capture metadata stored in your vault record.
+              </p>
+            </div>
 
-            <div className="bg-gray-700 rounded p-4 mb-4">
-              <div className="bg-gray-800 rounded mb-4 min-h-[200px] flex items-center justify-center overflow-hidden">
+            <div className={`${PANEL} p-4`}>
+              <div
+                className={`${PANEL_INNER} mb-4 flex min-h-[200px] items-center justify-center overflow-hidden`}
+              >
                 {previewImageUrl ? (
-                  <img src={previewImageUrl} alt="Captured page" className="max-w-full max-h-80 object-contain rounded" />
+                  <img
+                    src={previewImageUrl}
+                    alt="Captured evidence"
+                    className="max-h-80 max-w-full rounded-lg object-contain"
+                  />
                 ) : (
-                  <p className="text-gray-500 text-sm">No preview</p>
+                  <p className="text-sm text-slate-500">No preview</p>
                 )}
               </div>
 
               {previewMetadata ? (
                 <div className="space-y-2">
-                  <div className="p-2 bg-gray-600 rounded">
-                    <p className="text-gray-300 text-xs">Source URL</p>
-                    <p className="text-white font-mono text-sm break-all">{previewMetadata.source_url}</p>
+                  <div className={`${PANEL_INNER} p-3`}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Source</p>
+                    <p className="mt-1 font-mono text-sm break-all text-slate-100">{previewMetadata.source_url}</p>
                   </div>
 
-                  <div className="p-2 bg-gray-600 rounded">
-                    <p className="text-gray-300 text-xs">Uploaded at</p>
-                    <p className="text-white font-mono text-sm">{formatCapturedAt(previewMetadata.captured_at)}</p>
+                  <div className={`${PANEL_INNER} p-3`}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Sealed at (UTC)</p>
+                    <p className="mt-1 font-mono text-sm text-slate-100">
+                      {formatCapturedAt(previewMetadata.captured_at)}
+                    </p>
                   </div>
 
-                  <div className="p-2 bg-gray-600 rounded">
-                    <p className="text-gray-300 text-xs">Client IP (at capture)</p>
-                    <p className="text-white font-mono text-sm">{previewMetadata.client_ip}</p>
+                  <div className={`${PANEL_INNER} p-3`}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Client IP (at capture)</p>
+                    <p className="mt-1 font-mono text-sm text-slate-100">{previewMetadata.client_ip}</p>
                   </div>
 
-                  <div className="p-2 bg-gray-600 rounded">
-                    <p className="text-gray-300 text-xs">User-Agent</p>
-                    <p className="text-white font-mono text-xs break-all">
+                  <div className={`${PANEL_INNER} p-3`}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">User-Agent</p>
+                    <p className="mt-1 break-all font-mono text-xs text-slate-300">
                       {previewMetadata.user_agent ?? '—'}
                     </p>
                   </div>
@@ -246,34 +348,36 @@ export default function App() {
 
       case 2:
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white">Analysis & Admissibility</h2>
-            <p className="text-sm text-gray-300 mb-4">
-              Based on our analysis, this can classify your evidence. The following can be admissible in court:
-            </p>
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-white">Admissibility snapshot</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Indicators your locker can support for court-ready documentation (illustrative).
+              </p>
+            </div>
 
-            <div className="space-y-2">
-              <div className="flex items-start space-x-3 p-3 bg-gray-700 rounded">
-                <input type="checkbox" checked readOnly className="mt-1" />
+            <div className="space-y-3">
+              <div className={`${PANEL} flex items-start gap-3 p-4`}>
+                <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
                 <div>
-                  <p className="text-white font-semibold">Technical Authenticity</p>
-                  <p className="text-sm text-gray-300">Evidence of AI-generated or manipulated content</p>
+                  <p className="font-semibold text-white">Technical authenticity</p>
+                  <p className="text-sm text-slate-400">Signals related to synthetic or altered content</p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3 p-3 bg-gray-700 rounded">
-                <input type="checkbox" checked readOnly className="mt-1" />
+              <div className={`${PANEL} flex items-start gap-3 p-4`}>
+                <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
                 <div>
-                  <p className="text-white font-semibold">Chain of Custody</p>
-                  <p className="text-sm text-gray-300">Documented timeline and source of the evidence</p>
+                  <p className="font-semibold text-white">Chain of custody</p>
+                  <p className="text-sm text-slate-400">Timestamped capture tied to source and client context</p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3 p-3 bg-gray-700 rounded">
-                <input type="checkbox" checked readOnly className="mt-1" />
+              <div className={`${PANEL} flex items-start gap-3 p-4`}>
+                <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
                 <div>
-                  <p className="text-white font-semibold">Impact Documentation</p>
-                  <p className="text-sm text-gray-300">Evidence of harm caused by the deepfake</p>
+                  <p className="font-semibold text-white">Impact documentation</p>
+                  <p className="text-sm text-slate-400">Material that helps show scope of harm or spread</p>
                 </div>
               </div>
             </div>
@@ -282,31 +386,43 @@ export default function App() {
 
       case 3:
         return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white text-center mb-6">Review</h2>
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold tracking-tight text-white">Review & seal</h2>
+              <p className="mt-1 text-sm text-slate-400">Confirm details before you finalize this report.</p>
+            </div>
 
             <div className="space-y-3">
-              <div className="p-3 bg-gray-700 rounded">
-                <p className="text-gray-300 text-sm">Source</p>
-                <p className="text-white font-semibold break-all">
+              <div className={`${PANEL} p-4`}>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Source</p>
+                <p className="mt-1 break-all text-slate-100">
                   {previewMetadata?.source_url ?? formData.url}
                 </p>
               </div>
 
               {evidenceCode ? (
-                <div className="p-3 bg-gray-700 rounded border border-sky-700">
-                  <p className="text-gray-300 text-sm">Evidence code</p>
-                  <p className="text-sky-300 font-mono font-semibold break-all">{evidenceCode}</p>
-                  <p className="text-gray-400 text-xs mt-1">Save this code to retrieve the screenshot later.</p>
+                <div
+                  className={`${PANEL} shadow-[inset_0_2px_28px_rgba(0,0,0,0.35)] border-sky-800/40 p-5`}
+                >
+                  <p className="text-center text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+                    Retrieval code
+                  </p>
+                  <p className="mt-3 select-all break-all text-center font-mono text-2xl font-semibold tracking-wide text-sky-200 sm:text-3xl">
+                    {evidenceCode}
+                  </p>
+                  <p className="mt-3 text-center text-xs text-slate-500">
+                    You will see this code again after you submit — store it somewhere safe.
+                  </p>
                 </div>
               ) : null}
             </div>
 
             <button
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-6"
+              type="button"
+              className="w-full rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-500"
               onClick={handleSubmit}
             >
-              Submit Report
+              Submit & lock report
             </button>
           </div>
         );
@@ -318,93 +434,73 @@ export default function App() {
 
   if (submitted) {
     return (
-      <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8">
-        <div className="bg-slate-800 p-8 rounded-lg max-w-md w-full text-center">
-          <div className="text-4xl mb-4">✓</div>
-          <h1 className="text-3xl font-bold text-green-400 mb-2">Submitted</h1>
-          <p className="text-white mb-6">Your evidence report has been successfully submitted.</p>
+      <div className={`${PAGE_BG} flex flex-col items-center px-4 py-10 sm:px-8`}>
+        <div className="w-full max-w-6xl">
+          <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-12">
+            <div className="space-y-6 text-center lg:text-left">
+              <div className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-emerald-300/90 lg:inline-flex">
+                <VaultLockIcon className="h-3.5 w-3.5 text-emerald-400/90" />
+                Report sealed
+              </div>
 
-          <div className="bg-gray-700 p-4 rounded mb-6 text-left">
-            <p className="text-gray-300 text-sm mb-1">Evidence code</p>
-            <p className="text-white font-mono break-all">{evidenceCode ?? '—'}</p>
-            {previewMetadata ? (
-              <>
-                <p className="text-gray-300 text-sm mt-3 mb-1">Uploaded at</p>
-                <p className="text-white font-mono text-sm">{formatCapturedAt(previewMetadata.captured_at)}</p>
-              </>
-            ) : null}
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Your evidence is on file</h1>
+                <p className="mt-2 text-slate-400">
+                  Thank you. Keep the retrieval code below — it is how you or counsel unlock this sealed record.
+                </p>
+              </div>
+
+              <div
+                className={`${PANEL} shadow-[inset_0_2px_32px_rgba(0,0,0,0.45)] border-sky-800/50 px-4 py-10 sm:px-8`}
+              >
+                <p className="text-xs font-medium uppercase tracking-[0.28em] text-slate-500">Your retrieval code</p>
+                <p
+                  className="mt-5 select-all break-all text-center font-mono text-4xl font-semibold leading-tight tracking-[0.06em] text-sky-100 sm:text-5xl md:text-6xl lg:text-5xl xl:text-6xl"
+                  title={evidenceCode ?? undefined}
+                >
+                  {evidenceCode ?? '—'}
+                </p>
+                {previewMetadata ? (
+                  <p className="mt-6 text-center text-sm text-slate-500">
+                    Sealed at{' '}
+                    <span className="font-mono text-slate-300">{formatCapturedAt(previewMetadata.captured_at)}</span>
+                  </p>
+                ) : (
+                  <p className="mt-6 text-center text-sm text-slate-500">Store this code in a safe place.</p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="w-full rounded-xl border border-slate-600/80 bg-slate-900/50 py-3.5 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900/80 lg:max-w-md"
+                onClick={() => {
+                  setSubmitted(false);
+                  setStep(1);
+                  setView('home');
+                  setFormData({ url: '' });
+                  resetCaptureState();
+                }}
+              >
+                Back to home
+              </button>
+            </div>
+
+            <aside className={`${PANEL} p-6 sm:p-8`}>
+              <div className="mb-6 flex items-start gap-3 border-b border-slate-700/80 pb-6">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-600/80 bg-slate-950/60 text-slate-400">
+                  <VaultLockIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Legal support</h2>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                    Optional next step: reach out to a lawyer who works with digital evidence. No pressure — pick someone
+                    who fits your situation.
+                  </p>
+                </div>
+              </div>
+              <LawyerCards idPrefix="confirm" />
+            </aside>
           </div>
-
-          <p className="text-gray-300 text-sm mb-6">
-            Thank you for your report. Our legal team will review your submission.
-          </p>
-
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => {
-              setSubmitted(false);
-              setStep(1);
-              setView('home');
-              setFormData({ url: '' });
-              resetCaptureState();
-            }}
-          >
-            Back to Home
-          </button>
-
-          <button
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded mt-4"
-            onClick={() => {
-              setSubmitted(false);
-              setView('lawyers');
-            }}
-          >
-            Connect with a Lawyer
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'lawyers') {
-    return (
-      <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8">
-        <div className="bg-slate-800 p-8 rounded-lg max-w-2xl w-full">
-          <h1 className="text-3xl font-bold text-white mb-2 text-center">Connect with a Lawyer</h1>
-          <p className="text-gray-300 text-center mb-6">Our network of legal experts is ready to help you</p>
-
-          <div className="space-y-3 mb-6">
-            <div className="bg-gray-700 p-4 rounded cursor-pointer hover:bg-gray-600 transition">
-              <p className="text-white font-semibold">Sarah Martinez, Esq.</p>
-              <p className="text-gray-300 text-sm">Cybercrime & Digital Rights Specialist</p>
-              <p className="text-blue-400 text-xs mt-1">Free Initial Consultation</p>
-            </div>
-
-            <div className="bg-gray-700 p-4 rounded cursor-pointer hover:bg-gray-600 transition">
-              <p className="text-white font-semibold">James Chen, Esq.</p>
-              <p className="text-gray-300 text-sm">Media Law & Defamation Expert</p>
-              <p className="text-blue-400 text-xs mt-1">Free Initial Consultation</p>
-            </div>
-
-            <div className="bg-gray-700 p-4 rounded cursor-pointer hover:bg-gray-600 transition">
-              <p className="text-white font-semibold">Rachel Thompson, Esq.</p>
-              <p className="text-gray-300 text-sm">AI & Deepfake Litigation</p>
-              <p className="text-blue-400 text-xs mt-1">Free Initial Consultation</p>
-            </div>
-          </div>
-
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => {
-              setSubmitted(false);
-              setStep(1);
-              setView('home');
-              setFormData({ url: '' });
-              resetCaptureState();
-            }}
-          >
-            Back to Home
-          </button>
         </div>
       </div>
     );
@@ -412,34 +508,46 @@ export default function App() {
 
   if (view === 'create') {
     return (
-      <div className="h-screen w-screen bg-slate-900 flex flex-col">
-        <div className="flex-1 flex flex-col p-8 overflow-hidden">
-          <div className="flex justify-between mb-8 gap-2">
+      <div className={`${PAGE_BG} flex min-h-screen flex-col`}>
+        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8">
+          <header className="mb-8 flex items-center justify-between gap-3 border-b border-slate-800/80 pb-6">
+            <div className="flex items-center gap-2 text-slate-300">
+              <VaultLockIcon className="h-5 w-5 shrink-0 text-slate-500" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Evidence Locker</p>
+                <p className="text-sm text-slate-400">Protected workflow</p>
+              </div>
+            </div>
+            <span className="hidden text-right text-xs text-slate-600 sm:block">Chain of custody</span>
+          </header>
+
+          <div className="mb-8 flex justify-between gap-2">
             {[1, 2, 3].map((s) => (
-              <div key={s} className="flex flex-col items-center flex-1">
+              <div key={s} className="flex flex-1 flex-col items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex justify-center items-center font-bold ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition ${
                     s < step
-                      ? 'bg-green-600 text-white'
+                      ? 'bg-emerald-600/90 text-white ring-2 ring-emerald-500/40'
                       : s === step
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-600 text-gray-300'
+                        ? 'bg-sky-600 text-white ring-2 ring-sky-400/40'
+                        : 'border border-slate-600 bg-slate-900/80 text-slate-500'
                   }`}
                 >
                   {s < step ? '✓' : s}
                 </div>
-                <p className="text-xs text-gray-300 mt-2 text-center">
+                <p className="mt-2 text-center text-[11px] font-medium uppercase tracking-wide text-slate-500 sm:text-xs">
                   {CREATE_STEP_LABELS[s - 1]}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto mb-8">{renderStep()}</div>
+          <div className="mb-8 min-h-0 flex-1 overflow-y-auto">{renderStep()}</div>
 
-          <div className="flex justify-between gap-4">
+          <div className="flex gap-3 border-t border-slate-800/80 pt-6">
             <button
-              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              type="button"
+              className="flex-1 rounded-xl border border-slate-600/80 bg-slate-900/50 py-3.5 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900/80 disabled:opacity-40"
               onClick={prevStep}
               disabled={captureLoading}
             >
@@ -447,7 +555,8 @@ export default function App() {
             </button>
             {step < 3 && (
               <button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                type="button"
+                className="flex-1 rounded-xl bg-sky-600 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-sky-950/30 transition hover:bg-sky-500 disabled:opacity-40"
                 onClick={nextStep}
                 disabled={captureLoading}
               >
@@ -463,41 +572,54 @@ export default function App() {
   if (view === 'access') {
     if (codeSubmitted && accessMetadata && accessImageUrl) {
       return (
-        <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8 overflow-y-auto">
-          <div className="bg-slate-800 p-8 rounded-lg max-w-lg w-full">
-            <h1 className="text-2xl font-bold text-white mb-2">Your evidence</h1>
-
-            <div className="bg-gray-700 rounded mb-4 overflow-hidden">
-              <img src={accessImageUrl} alt="Stored evidence" className="w-full object-contain max-h-80 bg-black" />
+        <div className={`${PAGE_BG} flex min-h-screen flex-col items-center px-4 py-10 sm:px-8`}>
+          <div className="w-full max-w-lg">
+            <div className="mb-6 flex items-center gap-2 text-slate-500">
+              <VaultLockIcon className="h-5 w-5" />
+              <span className="text-xs font-semibold uppercase tracking-[0.2em]">Unsealed view</span>
             </div>
 
-            <div className="space-y-2 text-left mb-6">
-              <div className="p-2 bg-gray-700 rounded">
-                <p className="text-gray-400 text-xs">Source URL</p>
-                <p className="text-white font-mono text-sm break-all">{accessMetadata.source_url}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Retrieved evidence</h1>
+            <p className="mt-1 text-sm text-slate-400">Decrypted from your vault using the code you entered.</p>
+
+            <div className={`${PANEL} mt-6 overflow-hidden p-2`}>
+              <div className={`${PANEL_INNER} overflow-hidden`}>
+                <img
+                  src={accessImageUrl}
+                  alt="Stored evidence"
+                  className="max-h-80 w-full bg-black object-contain"
+                />
               </div>
-              <div className="p-2 bg-gray-700 rounded">
-                <p className="text-gray-400 text-xs">Uploaded at</p>
-                <p className="text-white font-mono text-sm">{formatCapturedAt(accessMetadata.captured_at)}</p>
+            </div>
+
+            <div className="mb-8 mt-6 space-y-3 text-left">
+              <div className={`${PANEL} p-4`}>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Source</p>
+                <p className="mt-1 break-all font-mono text-sm text-slate-100">{accessMetadata.source_url}</p>
               </div>
-              <div className="p-2 bg-gray-700 rounded">
-                <p className="text-gray-400 text-xs">Client IP (at capture)</p>
-                <p className="text-white font-mono text-sm">{accessMetadata.client_ip}</p>
+              <div className={`${PANEL} p-4`}>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Sealed at (UTC)</p>
+                <p className="mt-1 font-mono text-sm text-slate-100">{formatCapturedAt(accessMetadata.captured_at)}</p>
               </div>
-              <div className="p-2 bg-gray-700 rounded">
-                <p className="text-gray-400 text-xs">User-Agent</p>
-                <p className="text-white font-mono text-xs break-all">{accessMetadata.user_agent ?? '—'}</p>
+              <div className={`${PANEL} p-4`}>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Client IP (at capture)</p>
+                <p className="mt-1 font-mono text-sm text-slate-100">{accessMetadata.client_ip}</p>
+              </div>
+              <div className={`${PANEL} p-4`}>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">User-Agent</p>
+                <p className="mt-1 break-all font-mono text-xs text-slate-300">{accessMetadata.user_agent ?? '—'}</p>
               </div>
             </div>
 
             <button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              type="button"
+              className="w-full rounded-xl border border-slate-600/80 bg-slate-900/50 py-3.5 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900/80"
               onClick={() => {
                 setView('home');
                 resetAccessState();
               }}
             >
-              Back to Home
+              Back to home
             </button>
           </div>
         </div>
@@ -505,42 +627,64 @@ export default function App() {
     }
 
     return (
-      <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8">
-        <div className="bg-slate-800 p-8 rounded-lg max-w-md w-full">
+      <div className={`${PAGE_BG} flex min-h-screen flex-col items-center justify-center px-6 py-16`}>
+        <div className="w-full max-w-lg">
           <button
-            className="mb-6 text-gray-400 hover:text-white text-sm"
+            type="button"
+            className="mb-6 flex items-center gap-2 text-sm text-slate-500 transition hover:text-slate-300"
             onClick={() => {
               setView('home');
               resetAccessState();
             }}
           >
-            ← Back
+            <span aria-hidden>←</span> Back
           </button>
 
-          <h1 className="text-2xl font-bold text-white mb-2">Access My Files</h1>
-          <p className="text-gray-300 mb-6">
-            Enter your evidence code (from capture: <span className="font-mono text-slate-200">XXXX-YYYYYYYY</span>) to
-            load metadata and the PNG screenshot.
+          <div className="mb-8 flex items-center gap-2 text-slate-500">
+            <VaultLockIcon className="h-5 w-5" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Counsel access</span>
+          </div>
+
+          <h1 className="text-2xl font-bold tracking-tight text-white">Open a sealed record</h1>
+          <p className="mt-2 text-slate-400">
+            Enter the retrieval code (<span className="font-mono text-slate-300">XXXX-YYYYYYYY</span>) to load metadata
+            and the PNG image from the vault.
           </p>
 
           {accessError ? (
-            <p className="text-sm text-red-400 bg-red-950/50 border border-red-800 rounded p-2 mb-4">{accessError}</p>
+            <p className="mt-6 rounded-xl border border-red-800/80 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+              {accessError}
+            </p>
           ) : null}
 
-          <input
-            type="text"
-            className="w-full border border-gray-300 rounded p-3 text-white bg-gray-700 placeholder-gray-400 mb-6 font-mono"
-            placeholder="e.g. Ab12-xYz9AbCd"
-            value={accessCode}
-            onChange={(e) => setAccessCode(e.target.value)}
-          />
+          <div className={`${PANEL} mt-8 p-2 pl-4`}>
+            <label htmlFor="access-code" className="sr-only">
+              Evidence retrieval code
+            </label>
+            <input
+              id="access-code"
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full border-0 bg-transparent py-3.5 font-mono text-base text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0"
+              placeholder="e.g. Ab12-xYz9AbCd"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && accessCode.trim() && !accessLoading) {
+                  void handleAccessCodeSubmit();
+                }
+              }}
+            />
+          </div>
 
           <button
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+            type="button"
+            className="mt-5 w-full rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
             onClick={() => void handleAccessCodeSubmit()}
             disabled={!accessCode.trim() || accessLoading}
           >
-            {accessLoading ? 'Loading…' : 'Retrieve evidence'}
+            {accessLoading ? 'Unlocking…' : 'Retrieve evidence'}
           </button>
         </div>
       </div>
@@ -548,19 +692,31 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center px-6 py-16">
-      <div className="w-full max-w-lg flex flex-col items-center text-center">
+    <div className={`${PAGE_BG} flex flex-col items-center justify-center px-6 py-16`}>
+      <div className="flex w-full max-w-lg flex-col items-center text-center">
+        <div className="mb-6 flex items-center gap-2 text-slate-500">
+          <VaultLockIcon className="h-4 w-4" />
+          <span className="text-xs font-semibold uppercase tracking-[0.25em]">Evidence Locker</span>
+        </div>
+
         <img
           src="/icon.png"
           alt=""
-          className="mx-auto block h-10 w-auto max-w-[min(100%,22rem)] object-contain mb-10 opacity-95"
+          className="mx-auto mb-6 block h-10 w-auto max-w-[min(100%,22rem)] object-contain opacity-95"
         />
+
+        <h1 className="text-xl font-semibold tracking-tight text-slate-100">Seal a page or an image</h1>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-500">
+          Encrypted storage with a retrieval code — built for a clear chain of custody.
+        </p>
 
         <label htmlFor="home-url" className="sr-only">
           Page URL to capture
         </label>
+
+        <div className="mt-10 w-full">
         {captureError ? (
-          <p className="w-full text-sm text-red-300 bg-red-950/40 border border-red-800/80 rounded-lg px-3 py-2 mb-4 text-left">
+          <p className="mb-4 w-full rounded-lg border border-red-800/80 bg-red-950/40 px-3 py-2 text-left text-sm text-red-300">
             {captureError}
           </p>
         ) : null}
@@ -669,7 +825,7 @@ export default function App() {
         <p className="mt-10 text-sm text-slate-500">
           <button
             type="button"
-            className="text-slate-400 underline underline-offset-4 decoration-slate-600 hover:text-slate-300 hover:decoration-slate-500 transition-colors"
+            className="text-slate-400 underline decoration-slate-600 underline-offset-4 transition-colors hover:text-slate-300 hover:decoration-slate-500"
             onClick={() => {
               resetAccessState();
               setView('access');
@@ -678,6 +834,7 @@ export default function App() {
             I am a lawyer
           </button>
         </p>
+        </div>
       </div>
     </div>
   );
