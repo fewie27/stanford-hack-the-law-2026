@@ -26,8 +26,8 @@ jobs:
         run: |
           ssh -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} bash << 'EOF'
             set -euo pipefail
-            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o StrictHostKeyChecking=no"
-            cd ~/docker/swipac-backend/STAGE
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+            cd /srv/docker/container/app/STAGE
             git pull origin main
             docker compose -f docker-compose.yml up --build -d
           EOF
@@ -51,8 +51,8 @@ jobs:
           TAG="${{ github.ref_name }}"
           ssh -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} bash << EOF
             set -euo pipefail
-            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o StrictHostKeyChecking=no"
-            cd ~/docker/swipac-backend/PROD
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+            cd /srv/docker/container/app/STAGE
             git fetch --tags
             git checkout tags/${TAG}
             docker compose -f docker-compose.yml up --build -d
