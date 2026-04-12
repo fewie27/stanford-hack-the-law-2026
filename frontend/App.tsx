@@ -392,7 +392,9 @@ export default function App() {
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold tracking-tight text-white">Review & seal</h2>
-              <p className="mt-1 text-sm text-slate-400">Confirm details before you finalize this report.</p>
+              <p className="mt-1 text-sm text-slate-400">
+                Confirm the source below. Your retrieval code (the decryption key) is shown only after you submit.
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -402,22 +404,6 @@ export default function App() {
                   {previewMetadata?.source_url ?? formData.url}
                 </p>
               </div>
-
-              {evidenceCode ? (
-                <div
-                  className={`${PANEL} shadow-[inset_0_2px_28px_rgba(0,0,0,0.35)] border-sky-800/40 p-5`}
-                >
-                  <p className="text-center text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
-                    Retrieval code
-                  </p>
-                  <p className="mt-3 select-all break-all text-center font-mono text-2xl font-semibold tracking-wide text-sky-200 sm:text-3xl">
-                    {evidenceCode}
-                  </p>
-                  <p className="mt-3 text-center text-xs text-slate-500">
-                    You will see this code again after you submit — store it somewhere safe.
-                  </p>
-                </div>
-              ) : null}
             </div>
 
             <button
@@ -441,35 +427,49 @@ export default function App() {
         <div className="w-full max-w-6xl">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-12">
             <div className="space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-emerald-300/90 lg:inline-flex">
-                <VaultLockIcon className="h-3.5 w-3.5 text-emerald-400/90" />
+              <div className="inline-flex items-center justify-center gap-3 rounded-full border border-emerald-500/35 bg-emerald-950/45 px-5 py-2.5 text-xs font-medium uppercase tracking-[0.2em] text-emerald-300/95 lg:inline-flex">
+                <VaultLockIcon className="h-8 w-8 shrink-0 text-emerald-400" />
                 Report sealed
               </div>
 
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Your evidence is on file</h1>
                 <p className="mt-2 text-slate-400">
-                  Thank you. Keep the retrieval code below — it is how you or counsel unlock this sealed record.
+                  Thank you. The vault stores your file encrypted; the code below includes the key needed to decrypt and
+                  retrieve it. Share it only with people you trust.
                 </p>
               </div>
 
               <div
-                className={`${PANEL} shadow-[inset_0_2px_32px_rgba(0,0,0,0.45)] border-sky-800/50 px-4 py-10 sm:px-8`}
+                className={`${PANEL} shadow-[inset_0_2px_32px_rgba(0,0,0,0.45)] border-emerald-900/35 px-4 py-8 sm:px-8`}
               >
-                <p className="text-xs font-medium uppercase tracking-[0.28em] text-slate-500">Your retrieval code</p>
+                <div className="mb-5 flex justify-center lg:justify-start">
+                  <div
+                    className="flex h-20 w-20 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-950/40 text-emerald-400 shadow-lg shadow-emerald-950/20"
+                    aria-hidden
+                  >
+                    <VaultLockIcon className="h-12 w-12" />
+                  </div>
+                </div>
+                <p className="text-center text-xs font-medium uppercase tracking-[0.28em] text-slate-500 lg:text-left">
+                  Your retrieval code
+                </p>
+                <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-relaxed text-slate-400 lg:mx-0 lg:text-left">
+                  This code is your decryption key. Without it, the encrypted evidence cannot be unlocked.
+                </p>
                 <p
-                  className="mt-5 select-all break-all text-center font-mono text-4xl font-semibold leading-tight tracking-[0.06em] text-sky-100 sm:text-5xl md:text-6xl lg:text-5xl xl:text-6xl"
+                  className="mt-6 select-all break-all text-center font-mono text-3xl font-semibold leading-snug tracking-[0.05em] text-emerald-400 sm:text-4xl md:text-5xl lg:text-left"
                   title={evidenceCode ?? undefined}
                 >
                   {evidenceCode ?? '—'}
                 </p>
                 {previewMetadata ? (
-                  <p className="mt-6 text-center text-sm text-slate-500">
+                  <p className="mt-6 text-center text-sm text-slate-500 lg:text-left">
                     Sealed at{' '}
                     <span className="font-mono text-slate-300">{formatCapturedAt(previewMetadata.captured_at)}</span>
                   </p>
                 ) : (
-                  <p className="mt-6 text-center text-sm text-slate-500">Store this code in a safe place.</p>
+                  <p className="mt-6 text-center text-sm text-slate-500 lg:text-left">Store this code in a safe place.</p>
                 )}
               </div>
 
@@ -489,9 +489,9 @@ export default function App() {
             </div>
 
             <aside className={`${PANEL} p-6 sm:p-8`}>
-              <div className="mb-6 flex items-start gap-3 border-b border-slate-700/80 pb-6">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-600/80 bg-slate-950/60 text-slate-400">
-                  <VaultLockIcon className="h-5 w-5" />
+              <div className="mb-6 flex items-start gap-4 border-b border-slate-700/80 pb-6">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-950/35 text-emerald-400/95">
+                  <VaultLockIcon className="h-8 w-8" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-white">Legal support</h2>
@@ -514,11 +514,13 @@ export default function App() {
       <div className={`${PAGE_BG} min-h-screen`}>
         <div className="mx-auto flex w-full max-w-2xl flex-col px-5 py-8 sm:px-8 pb-12">
           <header className="mb-8 flex items-center justify-between gap-3 border-b border-slate-800/80 pb-6">
-            <div className="flex items-center gap-2 text-slate-300">
-              <VaultLockIcon className="h-5 w-5 shrink-0 text-slate-500" />
+            <div className="flex items-center gap-4 text-slate-300">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-600/70 bg-slate-950/55 text-emerald-500/90 ring-1 ring-white/5">
+                <VaultLockIcon className="h-9 w-9" />
+              </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Evidence Locker</p>
-                <p className="text-sm text-slate-400">Protected workflow</p>
+                <p className="text-sm text-slate-400">Encrypted vault workflow</p>
               </div>
             </div>
             <span className="hidden text-right text-xs text-slate-600 sm:block">Chain of custody</span>
@@ -579,8 +581,10 @@ export default function App() {
           <div className="mx-auto w-full max-w-7xl">
             <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="mb-2 flex items-center gap-2 text-slate-500">
-                  <VaultLockIcon className="h-5 w-5" />
+                <div className="mb-3 flex items-center gap-3 text-slate-500">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-950/30 text-emerald-400/90">
+                    <VaultLockIcon className="h-7 w-7" />
+                  </div>
                   <span className="text-xs font-semibold uppercase tracking-[0.2em]">Unsealed view</span>
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Retrieved evidence</h1>
@@ -657,15 +661,18 @@ export default function App() {
             <span aria-hidden>←</span> Back
           </button>
 
-          <div className="mb-8 flex items-center gap-2 text-slate-500">
-            <VaultLockIcon className="h-5 w-5" />
+          <div className="mb-8 flex items-center gap-4 text-slate-500">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-600/70 bg-slate-950/50 text-emerald-500/85 ring-1 ring-white/5">
+              <VaultLockIcon className="h-9 w-9" />
+            </div>
             <span className="text-xs font-semibold uppercase tracking-[0.2em]">Counsel access</span>
           </div>
 
           <h1 className="text-2xl font-bold tracking-tight text-white">Open a sealed record</h1>
           <p className="mt-2 text-slate-400">
-            Enter the retrieval code (<span className="font-mono text-slate-300">XXXX-YYYYYYYY</span>) to load metadata
-            and the PNG image from the vault.
+            Enter your retrieval code (the decryption key, format{' '}
+            <span className="font-mono text-slate-300">XXXX-YYYYYYYY</span>) to decrypt and load metadata and the PNG
+            from the vault.
           </p>
 
           {accessError ? (
@@ -711,9 +718,11 @@ export default function App() {
   return (
     <div className={`${PAGE_BG} flex flex-col items-center justify-center px-6 py-16`}>
       <div className="flex w-full max-w-lg flex-col items-center text-center">
-        <div className="mb-6 flex items-center gap-2 text-slate-500">
-          <VaultLockIcon className="h-4 w-4" />
-          <span className="text-xs font-semibold uppercase tracking-[0.25em]">Evidence Locker</span>
+        <div className="mb-2 flex flex-col items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-950/25 text-emerald-400 shadow-lg shadow-emerald-950/30 ring-1 ring-white/5">
+            <VaultLockIcon className="h-10 w-10" />
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Evidence Locker</span>
         </div>
 
         <img
@@ -724,7 +733,8 @@ export default function App() {
 
         <h1 className="text-xl font-semibold tracking-tight text-slate-100">Seal a page or an image</h1>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-500">
-          Encrypted storage with a retrieval code — built for a clear chain of custody.
+          Files are encrypted in the vault; your retrieval code includes the key to decrypt them — built for a clear
+          chain of custody.
         </p>
 
         <label htmlFor="home-url" className="sr-only">
