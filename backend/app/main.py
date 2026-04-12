@@ -19,6 +19,11 @@ from app.ssrf import UnsafeUrlError, assert_public_http_url
 from app.storage import read_vault, vault_exists, write_vault
 from app.upload_image import MAX_UPLOAD_BYTES, image_bytes_to_png
 
+# Import classifier (lives in sibling directory; added to sys.path)
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
+from classifier.classifier import classify_url as _classify_url
+
 logger = logging.getLogger(__name__)
 
 
@@ -262,6 +267,41 @@ async def evidence_retrieve(body: RetrieveRequest):
         iter([png]),
         media_type="image/png",
         headers=headers,
+    )
+
+
+class ClassifyRequest(BaseModel):
+    url: str = Field(description="URL to classify (image link or webpage).")
+
+
+class ClassifyResponse(BaseModel):
+    category: str
+    confidence: float
+    summary: str
+    suggested_tags: list[str]
+    input_type: str
+    url: str
+
+
+@app.post(
+    "/v1/evidence/classify",
+    response_model=ClassifyResponse,
+    responses={422: {"model": ErrorBody}},
+    summary="Classify content at a URL using Gemini",
+)
+async def evidence_classify(body: ClassifyRequest):
+    try:
+        result = _classify_url(body.url)
+    except Exception as e:
+        logger.exception("Classification failed")
+        raise HTTPException(status_code=422, detail=f"Classification failed: {e}") from e
+    return ClassifyResponse(
+        category=result.get("category", "other"),
+        confidence=result.get("confidence", 0.0),
+        summary=result.get("summary", ""),
+        suggested_tags=result.get("suggested_tags", []),
+        input_type=result.get("input_type", "unknown"),
+        url=result.get("url", body.url),
     )
 
 

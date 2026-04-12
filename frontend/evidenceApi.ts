@@ -180,6 +180,40 @@ export async function fetchEvidenceMetadata(
   return JSON.parse(text) as EvidenceMetadata;
 }
 
+/** Classification result from `POST /v1/evidence/classify`. */
+export type ClassificationResult = {
+  category: string;
+  confidence: number;
+  summary: string;
+  suggested_tags: string[];
+  input_type: string;
+  url: string;
+};
+
+export async function classifyEvidence(
+  url: string,
+  baseUrl: string = getEvidenceApiBaseUrl()
+): Promise<ClassificationResult> {
+  const api = apiUrl("/v1/evidence/classify", baseUrl);
+  const res = await fetch(api, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let detail = text;
+    try {
+      const j = JSON.parse(text) as { detail?: string };
+      if (typeof j.detail === "string") detail = j.detail;
+    } catch {
+      /* use raw */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return JSON.parse(text) as ClassificationResult;
+}
+
 /** Decrypted PNG bytes from `POST /v1/evidence/retrieve`. */
 export async function fetchEvidenceImage(
   code: string,

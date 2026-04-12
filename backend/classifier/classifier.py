@@ -32,7 +32,7 @@ from dotenv import load_dotenv
 GEMINI_MODEL = "gemini-2.5-flash"   # free tier, multimodal, fast
 
 
-load_dotenv("classifier.env") 
+load_dotenv(os.path.join(os.path.dirname(__file__), "classifier.env"))
 # Get API key from environment — never hardcode this
 try: 
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")

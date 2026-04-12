@@ -3,10 +3,12 @@ import { useCallback, useRef, useState } from 'react';
 
 import {
   captureEvidenceUrl,
+  classifyEvidence,
   fetchEvidenceImage,
   fetchEvidenceMetadata,
   normalizeEvidenceUrl,
   uploadEvidenceImage,
+  type ClassificationResult,
   type EvidenceMetadata,
 } from './evidenceApi';
 
@@ -144,6 +146,10 @@ export default function App() {
   const [uploadDragActive, setUploadDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [classifyResult, setClassifyResult] = useState<ClassificationResult | null>(null);
+  const [classifyLoading, setClassifyLoading] = useState(false);
+  const [classifyError, setClassifyError] = useState<string | null>(null);
+
   const [accessLoading, setAccessLoading] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [accessMetadata, setAccessMetadata] = useState<EvidenceMetadata | null>(null);
@@ -170,6 +176,8 @@ export default function App() {
     setCaptureError(null);
     setSelectedFile(null);
     setUploadDragActive(false);
+    setClassifyResult(null);
+    setClassifyError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [revokePreviewUrl]);
 
@@ -252,7 +260,22 @@ export default function App() {
   };
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+    if (step < 3) {
+      const next = step + 1;
+      setStep(next);
+      // Kick off classification when entering Analysis step
+      if (next === 2 && !classifyResult && !classifyLoading) {
+        const url = previewMetadata?.source_url ?? formData.url;
+        if (url && !url.startsWith('upload:')) {
+          setClassifyLoading(true);
+          setClassifyError(null);
+          classifyEvidence(url)
+            .then((r) => setClassifyResult(r))
+            .catch((e) => setClassifyError(e instanceof Error ? e.message : 'Classification failed'))
+            .finally(() => setClassifyLoading(false));
+        }
+      }
+    }
   };
 
   const prevStep = () => {
@@ -353,37 +376,102 @@ export default function App() {
         return (
           <div className="space-y-5">
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">Admissibility snapshot</h2>
+              <h2 className="text-xl font-bold tracking-tight text-white">Content analysis</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Indicators your locker can support for court-ready documentation (illustrative).
+                AI-powered classification of the captured content for evidence documentation.
               </p>
             </div>
 
-            <div className="space-y-3">
-              <div className={`${PANEL} flex items-start gap-3 p-4`}>
-                <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
-                <div>
-                  <p className="font-semibold text-white">Technical authenticity</p>
-                  <p className="text-sm text-slate-400">Signals related to synthetic or altered content</p>
-                </div>
+            {classifyLoading ? (
+              <div className={`${PANEL} flex flex-col items-center justify-center gap-3 p-8`}>
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-sky-400" />
+                <p className="text-sm text-slate-400">Analyzing content&hellip;</p>
               </div>
+            ) : classifyError ? (
+              <div className={`${PANEL} border-l-4 border-l-amber-500/70 p-4`}>
+                <p className="font-semibold text-amber-200">Classification unavailable</p>
+                <p className="mt-1 text-sm text-slate-400">{classifyError}</p>
+              </div>
+            ) : classifyResult ? (
+              <div className="space-y-3">
+                {/* Category + confidence */}
+                <div className={`${PANEL} p-4`}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Category</p>
+                  <p className="mt-1 font-semibold text-white">{classifyResult.category}</p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-700">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          classifyResult.confidence >= 0.75
+                            ? 'bg-emerald-500'
+                            : classifyResult.confidence >= 0.5
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500'
+                        }`}
+                        style={{ width: `${Math.round(classifyResult.confidence * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-mono text-slate-300">
+                      {Math.round(classifyResult.confidence * 100)}%
+                    </span>
+                  </div>
+                </div>
 
-              <div className={`${PANEL} flex items-start gap-3 p-4`}>
-                <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
-                <div>
-                  <p className="font-semibold text-white">Chain of custody</p>
-                  <p className="text-sm text-slate-400">Timestamped capture tied to source and client context</p>
+                {/* Summary */}
+                <div className={`${PANEL} p-4`}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Summary</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-200">{classifyResult.summary}</p>
                 </div>
-              </div>
 
-              <div className={`${PANEL} flex items-start gap-3 p-4`}>
-                <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
-                <div>
-                  <p className="font-semibold text-white">Impact documentation</p>
-                  <p className="text-sm text-slate-400">Material that helps show scope of harm or spread</p>
+                {/* Tags */}
+                {classifyResult.suggested_tags.length > 0 && (
+                  <div className={`${PANEL} p-4`}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Evidence tags</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {classifyResult.suggested_tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-slate-600/60 bg-slate-800/60 px-3 py-1 text-xs font-medium text-slate-300"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Input type */}
+                <div className={`${PANEL} p-4`}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Analyzed as</p>
+                  <p className="mt-1 text-sm text-slate-300 capitalize">{classifyResult.input_type}</p>
                 </div>
               </div>
-            </div>
+            ) : (
+              /* Fallback for uploads (no URL to classify) — show original static checks */
+              <div className="space-y-3">
+                <div className={`${PANEL} flex items-start gap-3 p-4`}>
+                  <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
+                  <div>
+                    <p className="font-semibold text-white">Technical authenticity</p>
+                    <p className="text-sm text-slate-400">Signals related to synthetic or altered content</p>
+                  </div>
+                </div>
+                <div className={`${PANEL} flex items-start gap-3 p-4`}>
+                  <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
+                  <div>
+                    <p className="font-semibold text-white">Chain of custody</p>
+                    <p className="text-sm text-slate-400">Timestamped capture tied to source and client context</p>
+                  </div>
+                </div>
+                <div className={`${PANEL} flex items-start gap-3 p-4`}>
+                  <input type="checkbox" checked readOnly className="mt-1 rounded border-slate-500" />
+                  <div>
+                    <p className="font-semibold text-white">Impact documentation</p>
+                    <p className="text-sm text-slate-400">Material that helps show scope of harm or spread</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
 
