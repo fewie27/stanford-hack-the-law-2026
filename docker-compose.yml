@@ -7,6 +7,9 @@ services:
         EVIDENCE_API_BASE_URL: ${EVIDENCE_API_BASE_URL:-}
     ports:
       - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   backend:

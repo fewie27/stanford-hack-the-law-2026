@@ -9,19 +9,23 @@ function readExtra(): Extra {
 }
 
 /**
- * Base URL for the Evidence Locker API.
- * - If root `.env` sets `EVIDENCE_API_BASE_URL`, that origin is used (no localhost).
- * - If unset or empty, local dev uses `http://localhost:8000`.
+ * Base URL for the Evidence Locker API (no trailing slash).
+ * - Explicit `EVIDENCE_API_BASE_URL` in root `.env` → that origin.
+ * - Otherwise, Expo dev (`__DEV__`) → `http://localhost:8000` (API on another port).
+ * - Otherwise (static export behind nginx/Docker) → `""` so requests use same origin; nginx proxies `/v1/` to the backend.
  */
 export function getEvidenceApiBaseUrl(): string {
   const raw = readExtra().evidenceApiBaseUrl;
   if (typeof raw === "string" && raw.trim().length > 0) {
     return raw.trim().replace(/\/$/, "");
   }
-  return LOCAL_DEV_BASE;
+  if (typeof __DEV__ !== "undefined" && __DEV__) {
+    return LOCAL_DEV_BASE;
+  }
+  return "";
 }
 
-/** True when a non-empty public API URL was baked in at build time (server / production). */
+/** True when a non-empty API URL was set at build time (not same-origin / not localhost dev default). */
 export function isProductionEvidenceApi(): boolean {
   const raw = readExtra().evidenceApiBaseUrl;
   return typeof raw === "string" && raw.trim().length > 0;
@@ -48,7 +52,8 @@ export async function captureEvidenceUrl(
   url: string,
   baseUrl: string = getEvidenceApiBaseUrl()
 ): Promise<CaptureResponse> {
-  const api = `${baseUrl.replace(/\/$/, "")}/v1/evidence/capture`;
+  const base = baseUrl.replace(/\/$/, "");
+  const api = `${base}/v1/evidence/capture`;
   const res = await fetch(api, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

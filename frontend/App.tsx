@@ -6,17 +6,12 @@ import {
   fetchEvidenceImage,
   fetchEvidenceMetadata,
   getEvidenceApiBaseUrl,
-  isProductionEvidenceApi,
   normalizeEvidenceUrl,
   type EvidenceMetadata,
 } from './evidenceApi';
 
 type FormData = {
-  role: string;
   url: string;
-  platform: string;
-  date: string;
-  fileName: string;
 };
 
 type View = 'home' | 'create' | 'access' | 'lawyers';
@@ -33,18 +28,27 @@ function formatCapturedAt(iso: string): string {
   }
 }
 
+function apiEnvLabel(): { display: string; mode: string } {
+  const base = getEvidenceApiBaseUrl();
+  if (base !== '') {
+    return { display: base, mode: 'Custom API URL' };
+  }
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    return { display: 'http://localhost:8000', mode: 'Local dev (localhost:8000)' };
+  }
+  if (typeof window !== 'undefined') {
+    return { display: window.location.origin, mode: 'Same site (nginx → API)' };
+  }
+  return { display: '', mode: 'Same site (nginx → API)' };
+}
+
 export default function App() {
-  const apiBase = getEvidenceApiBaseUrl();
-  const apiMode = isProductionEvidenceApi() ? 'Server API' : 'Local dev (localhost:8000)';
+  const { display: apiBase, mode: apiMode } = apiEnvLabel();
 
   const [view, setView] = useState<View>('home');
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
-    role: '',
     url: '',
-    platform: '',
-    date: '',
-    fileName: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [accessCode, setAccessCode] = useState('');
@@ -163,11 +167,7 @@ export default function App() {
       case 1:
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white">Evidence Information</h2>
-            <p className="text-sm text-gray-300">
-              Enter the public web page URL to capture. The server takes a screenshot and stores it as
-              encrypted evidence.
-            </p>
+            <h2 className="text-xl font-bold text-white">Link to capture</h2>
             {captureError ? (
               <p className="text-sm text-red-400 bg-red-950/50 border border-red-800 rounded p-2">
                 {captureError}
@@ -180,20 +180,6 @@ export default function App() {
               placeholder="https://example.com/page"
               value={formData.url}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-            />
-
-            <input
-              className="w-full border border-gray-300 rounded p-2 text-white bg-gray-700 placeholder-gray-400"
-              placeholder="Platform (e.g., Twitter, TikTok) — optional"
-              value={formData.platform}
-              onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-            />
-
-            <input
-              type="date"
-              className="w-full border border-gray-300 rounded p-2 text-white bg-gray-700"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             />
           </div>
         );
@@ -223,7 +209,7 @@ export default function App() {
                   </div>
 
                   <div className="p-2 bg-gray-600 rounded">
-                    <p className="text-gray-300 text-xs">Captured at</p>
+                    <p className="text-gray-300 text-xs">Uploaded at</p>
                     <p className="text-white font-mono text-sm">{formatCapturedAt(previewMetadata.captured_at)}</p>
                   </div>
 
@@ -283,7 +269,7 @@ export default function App() {
       case 4:
         return (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white text-center mb-6">Review Submission</h2>
+            <h2 className="text-2xl font-bold text-white text-center mb-6">Review</h2>
 
             <div className="space-y-3">
               <div className="p-3 bg-gray-700 rounded">
@@ -291,28 +277,11 @@ export default function App() {
                 <p className="text-white font-semibold break-all">{formData.url}</p>
               </div>
 
-              <div className="p-3 bg-gray-700 rounded">
-                <p className="text-gray-300 text-sm">Platform</p>
-                <p className="text-white font-semibold">{formData.platform || '—'}</p>
-              </div>
-
-              <div className="p-3 bg-gray-700 rounded">
-                <p className="text-gray-300 text-sm">Date discovered</p>
-                <p className="text-white font-semibold">{formData.date || '—'}</p>
-              </div>
-
               {evidenceCode ? (
                 <div className="p-3 bg-gray-700 rounded border border-sky-700">
                   <p className="text-gray-300 text-sm">Evidence code</p>
                   <p className="text-sky-300 font-mono font-semibold break-all">{evidenceCode}</p>
                   <p className="text-gray-400 text-xs mt-1">Save this code to retrieve the screenshot later.</p>
-                </div>
-              ) : null}
-
-              {formData.fileName ? (
-                <div className="p-3 bg-gray-700 rounded">
-                  <p className="text-gray-300 text-sm">Files</p>
-                  <p className="text-white font-semibold text-sm break-all">{formData.fileName}</p>
                 </div>
               ) : null}
             </div>
@@ -344,7 +313,7 @@ export default function App() {
             <p className="text-white font-mono break-all">{evidenceCode ?? '—'}</p>
             {previewMetadata ? (
               <>
-                <p className="text-gray-300 text-sm mt-3 mb-1">Captured at</p>
+                <p className="text-gray-300 text-sm mt-3 mb-1">Uploaded at</p>
                 <p className="text-white font-mono text-sm">{formatCapturedAt(previewMetadata.captured_at)}</p>
               </>
             ) : null}
@@ -360,13 +329,7 @@ export default function App() {
               setSubmitted(false);
               setStep(1);
               setView('home');
-              setFormData({
-                role: '',
-                url: '',
-                platform: '',
-                date: '',
-                fileName: '',
-              });
+              setFormData({ url: '' });
               resetCaptureState();
             }}
           >
@@ -420,13 +383,7 @@ export default function App() {
               setSubmitted(false);
               setStep(1);
               setView('home');
-              setFormData({
-                role: '',
-                url: '',
-                platform: '',
-                date: '',
-                fileName: '',
-              });
+              setFormData({ url: '' });
               resetCaptureState();
             }}
           >
@@ -510,7 +467,7 @@ export default function App() {
                 <p className="text-white font-mono text-sm break-all">{accessMetadata.source_url}</p>
               </div>
               <div className="p-2 bg-gray-700 rounded">
-                <p className="text-gray-400 text-xs">Captured at</p>
+                <p className="text-gray-400 text-xs">Uploaded at</p>
                 <p className="text-white font-mono text-sm">{formatCapturedAt(accessMetadata.captured_at)}</p>
               </div>
               <div className="p-2 bg-gray-700 rounded">
