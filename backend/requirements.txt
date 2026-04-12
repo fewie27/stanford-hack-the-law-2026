@@ -1,6 +1,7 @@
 fastapi>=0.110,<1
 uvicorn[standard]>=0.27,<1
-playwright>=1.40,<2
+# Pin to the same major/minor as the Dockerfile mcr.microsoft.com/playwright/python image tag.
+playwright==1.58.0
 cryptography>=42,<46
 pydantic>=2,<3
 pydantic-settings>=2,<3

@@ -1,5 +1,5 @@
-# Playwright base image includes Chromium and OS dependencies.
-FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
+# Playwright base image includes matching Chromium; keep tag in sync with playwright in requirements.txt.
+FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy
 
 WORKDIR /app
 
