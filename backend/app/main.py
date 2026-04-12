@@ -1,9 +1,10 @@
 import datetime as dt
 import logging
+import re
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, HttpUrl
@@ -16,6 +17,7 @@ from app.crypto import decrypt_blob, encrypt_blob
 from app.screenshot import capture_url_screenshot
 from app.ssrf import UnsafeUrlError, assert_public_http_url
 from app.storage import read_vault, vault_exists, write_vault
+from app.upload_image import MAX_UPLOAD_BYTES, image_bytes_to_png
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +89,32 @@ def get_browser(request: Request) -> Browser:
 BrowserDep = Annotated[Browser, Depends(get_browser)]
 
 
+def _safe_upload_filename(name: str | None) -> str:
+    if not name:
+        return "image"
+    base = name.replace("\\", "/").rsplit("/", 1)[-1].strip() or "image"
+    if len(base) > 200:
+        base = base[:200]
+    return re.sub(r"[^a-zA-Z0-9._-]", "_", base)
+
+
+async def _read_upload_limited(file: UploadFile) -> bytes:
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Image too large (max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB).",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def _decrypt_evidence_archive(body: RetrieveRequest) -> tuple[dict[str, Any], bytes]:
     try:
         record_id, unlock_key = parse_code(body.code)
@@ -134,6 +162,50 @@ async def evidence_capture(body: CaptureRequest, request: Request, browser: Brow
 
     meta = EvidenceMetadata(
         source_url=url_str,
+        captured_at_iso=captured_at,
+        client_ip=ip,
+        user_agent=ua,
+    )
+    tar_plain = build_uncompressed_tar(meta, png)
+
+    unlock_key = random_unlock_key(8)
+    for _ in range(64):
+        record_id = random_record_id(4)
+        if not vault_exists(record_id):
+            break
+    else:
+        raise HTTPException(status_code=503, detail="Could not allocate a unique record id; retry.")
+
+    blob = encrypt_blob(unlock_key, tar_plain)
+    write_vault(record_id, blob)
+    return CaptureResponse(code=format_code(record_id, unlock_key))
+
+
+@app.post(
+    "/v1/evidence/upload",
+    response_model=CaptureResponse,
+    responses={400: {"model": ErrorBody}, 422: {"model": ErrorBody}},
+    summary="Upload an image file and store it as encrypted PNG evidence",
+)
+async def evidence_upload(request: Request, file: UploadFile = File(..., description="Image file (JPEG, PNG, WebP, etc.)")):
+    raw = await _read_upload_limited(file)
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file.")
+
+    try:
+        png = image_bytes_to_png(raw)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    label = _safe_upload_filename(file.filename)
+    source_url = f"upload:{label}"
+
+    captured_at = dt.datetime.now(dt.timezone.utc).isoformat()
+    ip = client_ip(request)
+    ua = request.headers.get("user-agent")
+
+    meta = EvidenceMetadata(
+        source_url=source_url,
         captured_at_iso=captured_at,
         client_ip=ip,
         user_agent=ua,

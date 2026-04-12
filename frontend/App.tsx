@@ -1,11 +1,12 @@
 import './global.css';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import {
   captureEvidenceUrl,
   fetchEvidenceImage,
   fetchEvidenceMetadata,
   normalizeEvidenceUrl,
+  uploadEvidenceImage,
   type EvidenceMetadata,
 } from './evidenceApi';
 
@@ -44,6 +45,9 @@ export default function App() {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [captureLoading, setCaptureLoading] = useState(false);
   const [captureError, setCaptureError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadDragActive, setUploadDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [accessLoading, setAccessLoading] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
@@ -69,6 +73,9 @@ export default function App() {
     setEvidenceCode(null);
     setPreviewMetadata(null);
     setCaptureError(null);
+    setSelectedFile(null);
+    setUploadDragActive(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }, [revokePreviewUrl]);
 
   const resetAccessState = useCallback(() => {
@@ -91,6 +98,8 @@ export default function App() {
     setCaptureLoading(true);
     try {
       const { code } = await captureEvidenceUrl(normalized);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       const [meta, imageBlob] = await Promise.all([
         fetchEvidenceMetadata(code),
         fetchEvidenceImage(code),
@@ -108,6 +117,43 @@ export default function App() {
     } finally {
       setCaptureLoading(false);
     }
+  };
+
+  const runCaptureFromUpload = async () => {
+    if (!selectedFile) return;
+    setCaptureError(null);
+    setCaptureLoading(true);
+    try {
+      const { code } = await uploadEvidenceImage(selectedFile);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setFormData({ url: '' });
+      const [meta, imageBlob] = await Promise.all([
+        fetchEvidenceMetadata(code),
+        fetchEvidenceImage(code),
+      ]);
+      setEvidenceCode(code);
+      setPreviewMetadata(meta);
+      setPreviewImageUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(imageBlob);
+      });
+      setStep(1);
+      setView('create');
+    } catch (e) {
+      setCaptureError(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setCaptureLoading(false);
+    }
+  };
+
+  const pickImageFile = (file: File | null | undefined) => {
+    if (!file || !file.type.startsWith('image/')) {
+      setCaptureError(file ? 'Please choose an image file.' : null);
+      return;
+    }
+    setCaptureError(null);
+    setSelectedFile(file);
   };
 
   const nextStep = () => {
@@ -241,8 +287,10 @@ export default function App() {
 
             <div className="space-y-3">
               <div className="p-3 bg-gray-700 rounded">
-                <p className="text-gray-300 text-sm">URL</p>
-                <p className="text-white font-semibold break-all">{formData.url}</p>
+                <p className="text-gray-300 text-sm">Source</p>
+                <p className="text-white font-semibold break-all">
+                  {previewMetadata?.source_url ?? formData.url}
+                </p>
               </div>
 
               {evidenceCode ? (
@@ -545,6 +593,78 @@ export default function App() {
             {captureLoading ? '…' : 'Go'}
           </button>
         </div>
+
+        <div className="mt-6 flex w-full items-center gap-3">
+          <div className="h-px flex-1 bg-slate-700/90" aria-hidden />
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            or
+          </span>
+          <div className="h-px flex-1 bg-slate-700/90" aria-hidden />
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          id="home-upload"
+          onChange={(e) => pickImageFile(e.target.files?.[0])}
+        />
+
+        <div
+          role="button"
+          tabIndex={0}
+          className={`mt-4 w-full cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors ring-1 ring-white/5 ${
+            uploadDragActive
+              ? 'border-sky-400/80 bg-sky-950/30'
+              : 'border-slate-600/80 bg-slate-900/40 hover:border-slate-500 hover:bg-slate-900/70'
+          }`}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setUploadDragActive(true);
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setUploadDragActive(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setUploadDragActive(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setUploadDragActive(false);
+            pickImageFile(e.dataTransfer.files?.[0]);
+          }}
+        >
+          <p className="text-sm font-medium text-slate-200">Drop an image here or click to browse</p>
+          <p className="mt-1 text-xs text-slate-500">PNG, JPEG, WebP, or other common formats — max 10 MB</p>
+          {selectedFile ? (
+            <p className="mt-3 truncate font-mono text-xs text-sky-300/90" title={selectedFile.name}>
+              {selectedFile.name}
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          className="mt-4 w-full rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-950/40 hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+          onClick={() => void runCaptureFromUpload()}
+          disabled={!selectedFile || captureLoading}
+        >
+          {captureLoading ? 'Uploading…' : 'Upload evidence'}
+        </button>
 
         <p className="mt-10 text-sm text-slate-500">
           <button

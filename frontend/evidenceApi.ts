@@ -117,6 +117,37 @@ export async function captureEvidenceUrl(
   return JSON.parse(text) as CaptureResponse;
 }
 
+/** Upload a local image via `POST /v1/evidence/upload` (multipart); stored as PNG like URL capture. */
+export async function uploadEvidenceImage(
+  file: File,
+  baseUrl: string = getEvidenceApiBaseUrl()
+): Promise<CaptureResponse> {
+  const api = apiUrl("/v1/evidence/upload", baseUrl);
+  const form = new FormData();
+  form.append("file", file, file.name);
+  const res = await fetch(api, {
+    method: "POST",
+    body: form,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let detail = text;
+    try {
+      const j = JSON.parse(text) as { detail?: unknown };
+      if (typeof j.detail === "string") {
+        detail = j.detail;
+      } else if (Array.isArray(j.detail) && j.detail[0] && typeof j.detail[0] === "object") {
+        const v = j.detail[0] as { msg?: string };
+        if (typeof v.msg === "string") detail = v.msg;
+      }
+    } catch {
+      /* use raw */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return JSON.parse(text) as CaptureResponse;
+}
+
 /** Metadata returned by `POST /v1/evidence/metadata` (capture-time IP and timestamp). */
 export type EvidenceMetadata = {
   source_url: string;

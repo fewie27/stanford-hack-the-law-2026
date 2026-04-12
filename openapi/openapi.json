@@ -54,6 +54,54 @@
         }
       }
     },
+    "/v1/evidence/upload": {
+      "post": {
+        "summary": "Upload an image file and store it as encrypted PNG evidence",
+        "operationId": "evidence_upload_v1_evidence_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_evidence_upload_v1_evidence_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/evidence/metadata": {
       "post": {
         "summary": "Retrieve capture metadata (IP, timestamp, source URL) using an evidence code",
@@ -208,6 +256,21 @@
   },
   "components": {
     "schemas": {
+      "Body_evidence_upload_v1_evidence_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Image file (JPEG, PNG, WebP, etc.)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_evidence_upload_v1_evidence_upload_post"
+      },
       "CaptureRequest": {
         "properties": {
           "url": {
