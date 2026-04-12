@@ -34,8 +34,6 @@ type LawyerProfile = {
   initial: string;
   accent: string;
   avatar: string;
-  photo?: string;
-  email?: string;
 };
 
 const LAWYERS: LawyerProfile[] = [
@@ -63,16 +61,6 @@ const LAWYERS: LawyerProfile[] = [
     accent: 'border-l-violet-500/70',
     avatar: 'bg-violet-500/15 text-violet-100 ring-1 ring-violet-400/25',
   },
-  {
-    name: 'Riana Pfefferkorn',
-    focus: 'Internet law & digital rights',
-    hint: 'Research scholar at Stanford Internet Observatory focused on encryption, surveillance, and online content.',
-    initial: 'RP',
-    accent: 'border-l-rose-500/70',
-    avatar: 'bg-rose-500/15 text-rose-100 ring-1 ring-rose-400/25',
-    photo: '/pfefferkorn.png',
-    email: 'riana@stanford.edu',
-  },
 ];
 
 function VaultLockIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -98,14 +86,10 @@ function LawyerCards({ idPrefix }: { idPrefix: string }) {
           className={`${PANEL} flex gap-4 border-l-4 p-4 text-left transition hover:bg-slate-900/75 ${L.accent}`}
         >
           <div
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold overflow-hidden ${L.photo ? '' : L.avatar}`}
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${L.avatar}`}
             aria-hidden
           >
-            {L.photo ? (
-              <img src={L.photo} alt={L.name} className="h-full w-full object-cover" />
-            ) : (
-              L.initial
-            )}
+            {L.initial}
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-white">{L.name}</p>
@@ -114,23 +98,13 @@ function LawyerCards({ idPrefix }: { idPrefix: string }) {
             <p className="mt-2 text-xs font-medium text-emerald-400/90">
               Free initial consultation
             </p>
-            {L.email ? (
-              <a
-                href={`mailto:${L.email}`}
-                id={`${idPrefix}-lawyer-${i}`}
-                className="mt-3 inline-block text-sm font-medium text-sky-400/95 underline-offset-4 hover:text-sky-300 hover:underline"
-              >
-                {L.email}
-              </a>
-            ) : (
-              <button
-                type="button"
-                id={`${idPrefix}-lawyer-${i}`}
-                className="mt-3 text-sm font-medium text-sky-400/95 underline-offset-4 hover:text-sky-300 hover:underline"
-              >
-                Request intro
-              </button>
-            )}
+            <button
+              type="button"
+              id={`${idPrefix}-lawyer-${i}`}
+              className="mt-3 text-sm font-medium text-sky-400/95 underline-offset-4 hover:text-sky-300 hover:underline"
+            >
+              Request intro
+            </button>
           </div>
         </div>
       ))}
