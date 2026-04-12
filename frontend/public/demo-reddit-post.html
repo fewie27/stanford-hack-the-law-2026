@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>r/expose • Exposing Emily Carter — read this before you trust her</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #dae0e6;
+      font-family: -apple-system, BlinkMacSystemFont, 'IBM Plex Sans', 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #1c1c1c;
+      min-height: 100vh;
+    }
+
+    body.dark {
+      background: #1a1a1b;
+      color: #d7dadc;
+    }
+
+    /* ── TOP NAV ───────────────────────────────────────────── */
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #edeff1;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 16px;
+    }
+    body.dark .nav { background: #1a1a1b; border-color: #343536; }
+
+    .nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-logo svg { width: 32px; height: 32px; }
+    .nav-logo-text { font-weight: 700; font-size: 18px; color: #ff4500; letter-spacing: -0.3px; }
+
+    .nav-search {
+      flex: 1;
+      max-width: 690px;
+      background: #f6f7f8;
+      border: 1px solid #edeff1;
+      border-radius: 4px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      color: #878a8c;
+    }
+    body.dark .nav-search { background: #272729; border-color: #343536; }
+
+    .nav-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .btn { padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; }
+    .btn-outline { background: transparent; border: 1px solid #ff4500; color: #ff4500; }
+    .btn-fill { background: #ff4500; color: #fff; }
+    body.dark .btn-outline { border-color: #d7dadc; color: #d7dadc; }
+
+    /* ── LAYOUT ────────────────────────────────────────────── */
+    .layout {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 24px;
+      display: flex;
+      gap: 24px;
+    }
+
+    .main { flex: 1; min-width: 0; }
+    .sidebar { width: 312px; flex-shrink: 0; }
+
+    @media (max-width: 860px) { .sidebar { display: none; } }
+
+    /* ── SUBREDDIT BANNER ──────────────────────────────────── */
+    .sub-banner {
+      background: #ff4500;
+      height: 64px;
+      border-radius: 4px 4px 0 0;
+      margin-bottom: 0;
+    }
+    .sub-header {
+      background: #fff;
+      padding: 8px 24px 12px;
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 16px;
+      border-radius: 0 0 4px 4px;
+    }
+    body.dark .sub-header { background: #1a1a1b; }
+
+    .sub-icon {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #ff4500;
+      border: 4px solid #fff;
+      margin-top: -28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: #fff; font-weight: 900;
+      flex-shrink: 0;
+    }
+    body.dark .sub-icon { border-color: #1a1a1b; }
+
+    .sub-info h1 { font-size: 20px; font-weight: 700; }
+    .sub-info .sub-name { font-size: 14px; color: #878a8c; }
+
+    /* ── POST CARD ─────────────────────────────────────────── */
+    .post-card {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      display: flex;
+      overflow: hidden;
+    }
+    body.dark .post-card { background: #1e1e1f; border-color: #343536; }
+
+    /* vote column */
+    .vote-col {
+      background: #f8f9fa;
+      width: 40px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 4px;
+      gap: 4px;
+    }
+    body.dark .vote-col { background: #161617; }
+
+    .vote-btn {
+      background: none; border: none; cursor: pointer;
+      color: #878a8c; padding: 2px; border-radius: 2px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .vote-btn:hover { color: #ff4500; background: rgba(255,69,0,0.1); }
+    .vote-btn.up { color: #ff4500; }
+    .vote-count { font-size: 12px; font-weight: 700; color: #0f1a1c; }
+    body.dark .vote-count { color: #d7dadc; }
+
+    /* post body */
+    .post-body { flex: 1; padding: 8px; }
+
+    .post-meta {
+      font-size: 12px; color: #878a8c;
+      display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .post-meta .sub-link { font-weight: 700; color: #1c1c1c; }
+    body.dark .post-meta .sub-link { color: #d7dadc; }
+    .post-meta .sub-link:hover { text-decoration: underline; cursor: pointer; }
+    .post-meta a { color: inherit; text-decoration: none; }
+
+    .flair {
+      background: #ff45001a; color: #cc3600;
+      font-size: 11px; font-weight: 700; padding: 1px 6px;
+      border-radius: 2px; border: 1px solid #ff450040;
+    }
+    body.dark .flair { background: #ff450030; color: #ff6534; }
+
+    .post-title {
+      font-size: 18px; font-weight: 500; line-height: 1.4;
+      color: #222; margin-bottom: 10px;
+    }
+    body.dark .post-title { color: #d7dadc; }
+
+    .post-text {
+      font-size: 14px; line-height: 1.6; color: #3c3c3c;
+      background: #f6f7f8;
+      border-left: 4px solid #edeff1;
+      padding: 10px 14px;
+      border-radius: 2px;
+      margin-bottom: 10px;
+    }
+    body.dark .post-text { background: #272729; border-color: #343536; color: #d7dadc; }
+
+    /* awards */
+    .awards { display: flex; gap: 6px; margin-bottom: 8px; }
+    .award {
+      display: flex; align-items: center; gap: 3px;
+      font-size: 12px; color: #878a8c;
+    }
+    .award-icon { font-size: 16px; }
+
+    /* action bar */
+    .action-bar {
+      display: flex; gap: 4px; flex-wrap: wrap;
+    }
+    .action-btn {
+      background: none; border: none; cursor: pointer;
+      color: #878a8c; font-size: 12px; font-weight: 700;
+      padding: 6px 8px; border-radius: 2px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .action-btn:hover { background: #f6f7f8; color: #1c1c1c; }
+    body.dark .action-btn:hover { background: #2d2d2e; color: #d7dadc; }
+    .action-btn svg { width: 16px; height: 16px; }
+
+    /* ── COMMENT AREA ──────────────────────────────────────── */
+    .comment-section {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-top: 10px;
+      padding: 16px;
+    }
+    body.dark .comment-section { background: #1e1e1f; border-color: #343536; }
+
+    .comment-sort {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; color: #878a8c; margin-bottom: 16px;
+    }
+    .comment-sort span { font-weight: 700; color: #1c1c1c; cursor: pointer; }
+    body.dark .comment-sort span { color: #d7dadc; }
+
+    .comment-box {
+      border: 1px solid #edeff1; border-radius: 4px;
+      padding: 12px; font-size: 14px; color: #878a8c;
+      margin-bottom: 20px; cursor: text;
+    }
+    body.dark .comment-box { background: #272729; border-color: #343536; color: #878a8c; }
+
+    .comment { display: flex; gap: 8px; margin-bottom: 16px; }
+    .comment-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #ff4500; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+    }
+    .comment-content { flex: 1; }
+    .comment-header { font-size: 12px; color: #878a8c; margin-bottom: 4px; }
+    .comment-header .username { font-weight: 700; color: #1c1c1c; margin-right: 6px; }
+    body.dark .comment-header .username { color: #d7dadc; }
+    .comment-text { font-size: 14px; line-height: 1.5; margin-bottom: 6px; }
+    .comment-actions { display: flex; gap: 8px; }
+    .comment-action {
+      background: none; border: none; cursor: pointer;
+      font-size: 12px; font-weight: 700; color: #878a8c; padding: 2px 4px;
+    }
+    .comment-action:hover { color: #1c1c1c; }
+    body.dark .comment-action:hover { color: #d7dadc; }
+    .comment-vote { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #878a8c; }
+    .comment-vote .up { color: #ff4500; }
+
+    /* ── SIDEBAR ───────────────────────────────────────────── */
+    .sidebar-card {
+      background: #fff; border: 1px solid #ccc;
+      border-radius: 4px; overflow: hidden; margin-bottom: 16px;
+    }
+    body.dark .sidebar-card { background: #1e1e1f; border-color: #343536; }
+
+    .sidebar-card-header {
+      background: #ff4500; color: #fff;
+      font-weight: 700; font-size: 14px; padding: 10px 12px;
+    }
+    .sidebar-card-body { padding: 12px; font-size: 14px; line-height: 1.6; }
+    .sidebar-stat { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .sidebar-stat .label { color: #878a8c; }
+    .sidebar-stat .val { font-weight: 700; }
+    .sidebar-rule { font-size: 13px; margin-bottom: 8px; color: #3c3c3c; }
+    body.dark .sidebar-rule { color: #d7dadc; }
+    .rule-num { font-weight: 700; color: #ff4500; margin-right: 6px; }
+
+    /* ── DARK TOGGLE ───────────────────────────────────────── */
+    .theme-toggle {
+      position: fixed; bottom: 20px; right: 20px;
+      background: #ff4500; color: #fff;
+      border: none; border-radius: 50%; width: 44px; height: 44px;
+      font-size: 20px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+    }
+
+    /* ── NSFW / WARNING BANNER ─────────────────────────────── */
+    .warning-banner {
+      background: #fff3cd; border: 1px solid #ffc107;
+      border-radius: 4px; padding: 10px 14px;
+      font-size: 13px; color: #664d03; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    body.dark .warning-banner { background: #332200; border-color: #664d00; color: #ffd666; }
+  </style>
+</head>
+<body class="dark">
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo" href="#">
+    <!-- Reddit alien SVG -->
+    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="10" cy="10" r="10" fill="#FF4500"/>
+      <path d="M16.67 10a1.46 1.46 0 0 0-2.47-1 7.12 7.12 0 0 0-3.85-1.23l.65-3.08 2.13.45a1 1 0 1 0 .08-.63l-2.37-.5a.27.27 0 0 0-.31.2l-.73 3.44a7.14 7.14 0 0 0-3.89 1.25 1.46 1.46 0 1 0-1.61 2.39 2.87 2.87 0 0 0 0 .44c0 2.24 2.61 4.06 5.83 4.06s5.83-1.82 5.83-4.06a2.87 2.87 0 0 0 0-.44 1.46 1.46 0 0 0 .62-1.29zM7.27 11a1 1 0 1 1 1 1 1 1 0 0 1-1-1zm5.58 2.65a3.57 3.57 0 0 1-2.85.77 3.57 3.57 0 0 1-2.85-.77.27.27 0 0 1 .38-.38 3.06 3.06 0 0 0 2.47.63 3.06 3.06 0 0 0 2.47-.63.27.27 0 1 1 .38.38zm-.14-1.65a1 1 0 1 1 1-1 1 1 0 0 1-1 1z" fill="#fff"/>
+    </svg>
+    <span class="nav-logo-text">reddit</span>
+  </a>
+
+  <div class="nav-search">
+    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+    </svg>
+    Search Reddit
+  </div>
+
+  <div class="nav-actions">
+    <button class="btn btn-outline">Log In</button>
+    <button class="btn btn-fill">Sign Up</button>
+  </div>
+</nav>
+
+<!-- SUBREDDIT BANNER -->
+<div style="max-width:1200px; margin:0 auto; padding:0 24px;">
+  <div class="sub-banner"></div>
+  <div class="sub-header">
+    <div class="sub-icon">e</div>
+    <div class="sub-info">
+      <h1>r/expose</h1>
+      <div class="sub-name">• 284K members • 1.2K online</div>
+    </div>
+    <button class="btn btn-fill" style="margin-left:auto">Join</button>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+  <div class="main">
+
+    <!-- WARNING -->
+    <div class="warning-banner">
+      ⚠️ <strong>Content Warning:</strong> This post contains potentially sensitive material. Viewer discretion advised.
+    </div>
+
+    <!-- POST CARD -->
+    <div class="post-card">
+      <!-- VOTE COL -->
+      <div class="vote-col">
+        <button class="vote-btn up" title="Upvote">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 3l7 7h-4v7H7v-7H3l7-7z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <span class="vote-count">4.7k</span>
+        <button class="vote-btn" title="Downvote">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 17l-7-7h4V3h6v7h4l-7 7z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- POST BODY -->
+      <div class="post-body">
+        <div class="post-meta">
+          <span class="sub-link">r/expose</span>
+          <span>•</span>
+          <span>Posted by</span>
+          <a href="#">u/jakemorrison99</a>
+          <span>•</span>
+          <span>3 hours ago</span>
+          <span class="flair">EXPOSE</span>
+        </div>
+
+        <div class="post-title">
+          Exposing Emily Carter — read this before you trust her
+        </div>
+
+        <div class="post-text">
+          I have private photos of her and I'm not afraid to share them. She knows what she did. DM me for the full story. I have screenshots of everything — bank transfers, messages, the whole thing. Sharing this so everyone knows who she really is. Spread this.<br><br>
+          <em style="font-size:12px; opacity:0.6">[Content continues — 4 more paragraphs hidden behind age gate]</em>
+        </div>
+
+        <!-- awards -->
+        <div class="awards">
+          <div class="award"><span class="award-icon">🏆</span> 23</div>
+          <div class="award"><span class="award-icon">⬆️</span> 12</div>
+          <div class="award"><span class="award-icon">🥇</span> 5</div>
+        </div>
+
+        <!-- action bar -->
+        <div class="action-bar">
+          <button class="action-btn">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clip-rule="evenodd"/>
+            </svg>
+            312 Comments
+          </button>
+          <button class="action-btn">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
+            </svg>
+            Share
+          </button>
+          <button class="action-btn">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+            </svg>
+            Save
+          </button>
+          <button class="action-btn">
+            ••• More
+          </button>
+          <button class="action-btn" style="margin-left:auto; color:#cc0000">
+            🚩 Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMMENTS -->
+    <div class="comment-section">
+      <div class="comment-sort">
+        Sort by: <span>Top ▾</span>
+      </div>
+
+      <div class="comment-box">What are your thoughts?</div>
+
+      <!-- Comment 1 -->
+      <div class="comment">
+        <div class="comment-avatar" style="background:#7193ff">T</div>
+        <div class="comment-content">
+          <div class="comment-header">
+            <span class="username">throwaway_watcher</span>
+            <span>• 2 hours ago</span>
+          </div>
+          <div class="comment-text">This is disgusting behavior. Hope she gets justice.</div>
+          <div class="comment-actions">
+            <div class="comment-vote"><span class="up">▲</span> 892</div>
+            <button class="comment-action">Reply</button>
+            <button class="comment-action">Share</button>
+            <button class="comment-action">Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment 2 -->
+      <div class="comment">
+        <div class="comment-avatar" style="background:#46d160">M</div>
+        <div class="comment-content">
+          <div class="comment-header">
+            <span class="username">mod_watcher_99</span>
+            <span>• 1 hour ago</span>
+          </div>
+          <div class="comment-text">This post may violate Rule 4. Reporting to admins.</div>
+          <div class="comment-actions">
+            <div class="comment-vote"><span class="up">▲</span> 541</div>
+            <button class="comment-action">Reply</button>
+            <button class="comment-action">Share</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment 3 -->
+      <div class="comment">
+        <div class="comment-avatar" style="background:#ff585b">D</div>
+        <div class="comment-content">
+          <div class="comment-header">
+            <span class="username">darknet_lurker</span>
+            <span>• 45 minutes ago</span>
+          </div>
+          <div class="comment-text">DMed. Where's the link?</div>
+          <div class="comment-actions">
+            <div class="comment-vote">▲ 203</div>
+            <button class="comment-action">Reply</button>
+            <button class="comment-action">Share</button>
+            <button class="comment-action">Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment 4 (victim perspective placeholder) -->
+      <div class="comment">
+        <div class="comment-avatar" style="background:#ffd635">e</div>
+        <div class="comment-content">
+          <div class="comment-header">
+            <span class="username">emily_c_real</span>
+            <span>• 38 minutes ago</span>
+            <span style="background:#ff45001a; color:#ff4500; font-size:11px; padding:1px 5px; border-radius:2px; margin-left:6px;">OP mentioned</span>
+          </div>
+          <div class="comment-text">This is harassment. I have reported this post and am contacting a lawyer. <strong>Do not share this.</strong></div>
+          <div class="comment-actions">
+            <div class="comment-vote"><span class="up">▲</span> 3.1k</div>
+            <button class="comment-action">Reply</button>
+            <button class="comment-action">Share</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">About r/expose</div>
+      <div class="sidebar-card-body">
+        <p style="margin-bottom:12px; font-size:13px;">A community for exposing fraud, liars, and bad actors. Posts are user-submitted and unverified.</p>
+        <div class="sidebar-stat"><span class="label">Members</span><span class="val">284,102</span></div>
+        <div class="sidebar-stat"><span class="label">Online</span><span class="val" style="color:#46d160">1,247</span></div>
+        <div class="sidebar-stat"><span class="label">Created</span><span class="val">Mar 2019</span></div>
+        <hr style="border-color:#edeff1; margin:12px 0">
+        <button class="btn btn-fill" style="width:100%; margin-bottom:8px">Join</button>
+        <button class="btn btn-outline" style="width:100%">Create Post</button>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">Community Rules</div>
+      <div class="sidebar-card-body">
+        <div class="sidebar-rule"><span class="rule-num">1.</span> No doxxing personal addresses</div>
+        <div class="sidebar-rule"><span class="rule-num">2.</span> Must include evidence</div>
+        <div class="sidebar-rule"><span class="rule-num">3.</span> No minors</div>
+        <div class="sidebar-rule"><span class="rule-num">4.</span> No non-consensual intimate images</div>
+        <div class="sidebar-rule"><span class="rule-num">5.</span> Be civil in comments</div>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-card-header" style="background:#1a73e8">🔒 Victim? Preserve this evidence</div>
+      <div class="sidebar-card-body">
+        <p style="font-size:13px; margin-bottom:10px;">If this post is about you, <strong>don't just screenshot</strong> — screenshots get thrown out in court.</p>
+        <p style="font-size:13px; margin-bottom:10px;">Use <strong>Provable</strong> to create a tamper-proof, court-admissible evidence package in minutes.</p>
+        <button class="btn btn-fill" style="width:100%; background:#1a73e8">Preserve This Evidence →</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- DARK MODE TOGGLE -->
+<button class="theme-toggle" onclick="document.body.classList.toggle('dark')" title="Toggle dark/light mode">
+  ☀️
+</button>
+
+</body>
+</html>
