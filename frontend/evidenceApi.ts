@@ -27,6 +27,52 @@ export function isProductionEvidenceApi(): boolean {
   return typeof raw === "string" && raw.trim().length > 0;
 }
 
+/** Ensure a public http(s) URL for `POST /v1/evidence/capture` (adds https:// when missing). */
+export function normalizeEvidenceUrl(input: string): string {
+  const t = input.trim();
+  if (!t) {
+    throw new Error("Please enter a URL.");
+  }
+  if (/^https?:\/\//i.test(t)) {
+    return t;
+  }
+  return `https://${t}`;
+}
+
+export type CaptureResponse = {
+  code: string;
+};
+
+/** Response from `POST /v1/evidence/capture` — combined record id and key (XXXX-YYYYYYYY). */
+export async function captureEvidenceUrl(
+  url: string,
+  baseUrl: string = getEvidenceApiBaseUrl()
+): Promise<CaptureResponse> {
+  const api = `${baseUrl.replace(/\/$/, "")}/v1/evidence/capture`;
+  const res = await fetch(api, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let detail = text;
+    try {
+      const j = JSON.parse(text) as { detail?: unknown };
+      if (typeof j.detail === "string") {
+        detail = j.detail;
+      } else if (Array.isArray(j.detail) && j.detail[0] && typeof j.detail[0] === "object") {
+        const v = j.detail[0] as { msg?: string };
+        if (typeof v.msg === "string") detail = v.msg;
+      }
+    } catch {
+      /* use raw */
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
+  return JSON.parse(text) as CaptureResponse;
+}
+
 /** Metadata returned by `POST /v1/evidence/metadata` (capture-time IP and timestamp). */
 export type EvidenceMetadata = {
   source_url: string;
