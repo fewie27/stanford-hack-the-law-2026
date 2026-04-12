@@ -1,0 +1,59 @@
+name: Deploy to Staging and Production Servers
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  stage-deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Staging
+        run: |
+          ssh -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} bash << 'EOF'
+            set -euo pipefail
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o StrictHostKeyChecking=no"
+            cd ~/docker/swipac-backend/STAGE
+            git pull origin main
+            docker compose -f docker-compose.yml up --build -d
+          EOF
+
+  prod-deploy:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Production
+        run: |
+          TAG="${{ github.ref_name }}"
+          ssh -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} bash << EOF
+            set -euo pipefail
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o StrictHostKeyChecking=no"
+            cd ~/docker/swipac-backend/PROD
+            git fetch --tags
+            git checkout tags/${TAG}
+            docker compose -f docker-compose.yml up --build -d
+          EOF
