@@ -9,15 +9,56 @@ function readExtra(): Extra {
 }
 
 /**
+ * Turn env values like `api-evidence.example.com` into `https://api-evidence.example.com`.
+ * Without a scheme, `host/v1/...` is treated as a *relative* URL and becomes
+ * `https://<current-site>/host/v1/...` (wrong).
+ */
+export function normalizeApiOrigin(input: string): string {
+  const t = input.trim().replace(/\/$/, "");
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) {
+    return t;
+  }
+  return `https://${t}`;
+}
+
+/** Join path (e.g. `/v1/evidence/capture`) to base origin or same-document root-relative path. */
+function apiUrl(path: string, baseUrl: string): string {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  const base = baseUrl.replace(/\/$/, "");
+  if (base === "") {
+    return p;
+  }
+  const origin = normalizeApiOrigin(base);
+  return new URL(p, origin.endsWith("/") ? origin : `${origin}/`).href;
+}
+
+function explicitApiOriginFromBuild(): string | null {
+  try {
+    const pub = process.env.EXPO_PUBLIC_EVIDENCE_API_BASE_URL;
+    if (typeof pub === "string" && pub.trim().length > 0) {
+      return normalizeApiOrigin(pub);
+    }
+  } catch {
+    /* ignore */
+  }
+  const raw = readExtra().evidenceApiBaseUrl;
+  if (typeof raw === "string" && raw.trim().length > 0) {
+    return normalizeApiOrigin(raw);
+  }
+  return null;
+}
+
+/**
  * Base URL for the Evidence Locker API (no trailing slash).
- * - Explicit `EVIDENCE_API_BASE_URL` in root `.env` → that origin.
+ * - `EXPO_PUBLIC_EVIDENCE_API_BASE_URL` (inlined) / `extra.evidenceApiBaseUrl` → that origin (bare hostnames get `https://`).
  * - Otherwise, Expo dev (`__DEV__`) → `http://localhost:8000` (API on another port).
  * - Otherwise (static export behind nginx/Docker) → `""` so requests use same origin; nginx proxies `/v1/` to the backend.
  */
 export function getEvidenceApiBaseUrl(): string {
-  const raw = readExtra().evidenceApiBaseUrl;
-  if (typeof raw === "string" && raw.trim().length > 0) {
-    return raw.trim().replace(/\/$/, "");
+  const explicit = explicitApiOriginFromBuild();
+  if (explicit !== null && explicit.length > 0) {
+    return explicit;
   }
   if (typeof __DEV__ !== "undefined" && __DEV__) {
     return LOCAL_DEV_BASE;
@@ -27,8 +68,7 @@ export function getEvidenceApiBaseUrl(): string {
 
 /** True when a non-empty API URL was set at build time (not same-origin / not localhost dev default). */
 export function isProductionEvidenceApi(): boolean {
-  const raw = readExtra().evidenceApiBaseUrl;
-  return typeof raw === "string" && raw.trim().length > 0;
+  return explicitApiOriginFromBuild() !== null;
 }
 
 /** Ensure a public http(s) URL for `POST /v1/evidence/capture` (adds https:// when missing). */
@@ -52,8 +92,7 @@ export async function captureEvidenceUrl(
   url: string,
   baseUrl: string = getEvidenceApiBaseUrl()
 ): Promise<CaptureResponse> {
-  const base = baseUrl.replace(/\/$/, "");
-  const api = `${base}/v1/evidence/capture`;
+  const api = apiUrl("/v1/evidence/capture", baseUrl);
   const res = await fetch(api, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -90,7 +129,7 @@ export async function fetchEvidenceMetadata(
   code: string,
   baseUrl: string = getEvidenceApiBaseUrl()
 ): Promise<EvidenceMetadata> {
-  const url = `${baseUrl.replace(/\/$/, "")}/v1/evidence/metadata`;
+  const url = apiUrl("/v1/evidence/metadata", baseUrl);
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -115,7 +154,7 @@ export async function fetchEvidenceImage(
   code: string,
   baseUrl: string = getEvidenceApiBaseUrl()
 ): Promise<Blob> {
-  const url = `${baseUrl.replace(/\/$/, "")}/v1/evidence/retrieve`;
+  const url = apiUrl("/v1/evidence/retrieve", baseUrl);
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

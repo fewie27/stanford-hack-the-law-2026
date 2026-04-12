@@ -7,10 +7,12 @@ RUN npm ci
 
 COPY . .
 
-# Baked at build time: same semantics as root .env `EVIDENCE_API_BASE_URL` (see app.config.js).
+# Baked at build time: public API origin only, e.g. https://api-evidence.example.com (no path after host).
 ARG EVIDENCE_API_BASE_URL=
 ENV EVIDENCE_API_BASE_URL=$EVIDENCE_API_BASE_URL
+ENV EXPO_PUBLIC_EVIDENCE_API_BASE_URL=$EVIDENCE_API_BASE_URL
 
+ENV NODE_ENV=production
 ENV EXPO_NO_TELEMETRY=1
 RUN npx expo export --platform web
 
