@@ -5,7 +5,6 @@ import {
   captureEvidenceUrl,
   fetchEvidenceImage,
   fetchEvidenceMetadata,
-  getEvidenceApiBaseUrl,
   normalizeEvidenceUrl,
   type EvidenceMetadata,
 } from './evidenceApi';
@@ -15,6 +14,8 @@ type FormData = {
 };
 
 type View = 'home' | 'create' | 'access' | 'lawyers';
+
+const CREATE_STEP_LABELS = ['Screenshot', 'Analysis', 'Review'] as const;
 
 function formatCapturedAt(iso: string): string {
   try {
@@ -28,23 +29,7 @@ function formatCapturedAt(iso: string): string {
   }
 }
 
-function apiEnvLabel(): { display: string; mode: string } {
-  const base = getEvidenceApiBaseUrl();
-  if (base !== '') {
-    return { display: base, mode: 'Custom API URL' };
-  }
-  if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    return { display: 'http://localhost:8000', mode: 'Local dev (localhost:8000)' };
-  }
-  if (typeof window !== 'undefined') {
-    return { display: window.location.origin, mode: 'Same site (nginx → API)' };
-  }
-  return { display: '', mode: 'Same site (nginx → API)' };
-}
-
 export default function App() {
-  const { display: apiBase, mode: apiMode } = apiEnvLabel();
-
   const [view, setView] = useState<View>('home');
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
@@ -94,45 +79,48 @@ export default function App() {
     setCodeSubmitted(false);
   }, [revokeAccessUrl]);
 
-  const nextStep = async () => {
-    if (step === 1) {
-      setCaptureError(null);
-      let normalized: string;
-      try {
-        normalized = normalizeEvidenceUrl(formData.url);
-      } catch (e) {
-        setCaptureError(e instanceof Error ? e.message : 'Invalid URL');
-        return;
-      }
-      setCaptureLoading(true);
-      try {
-        const { code } = await captureEvidenceUrl(normalized);
-        const [meta, imageBlob] = await Promise.all([
-          fetchEvidenceMetadata(code),
-          fetchEvidenceImage(code),
-        ]);
-        setEvidenceCode(code);
-        setPreviewMetadata(meta);
-        setPreviewImageUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return URL.createObjectURL(imageBlob);
-        });
-        setStep(2);
-      } catch (e) {
-        setCaptureError(e instanceof Error ? e.message : 'Capture failed');
-      } finally {
-        setCaptureLoading(false);
-      }
+  const runCaptureFromUrl = async () => {
+    setCaptureError(null);
+    let normalized: string;
+    try {
+      normalized = normalizeEvidenceUrl(formData.url);
+    } catch (e) {
+      setCaptureError(e instanceof Error ? e.message : 'Invalid URL');
       return;
     }
-    if (step < 4) setStep(step + 1);
+    setCaptureLoading(true);
+    try {
+      const { code } = await captureEvidenceUrl(normalized);
+      const [meta, imageBlob] = await Promise.all([
+        fetchEvidenceMetadata(code),
+        fetchEvidenceImage(code),
+      ]);
+      setEvidenceCode(code);
+      setPreviewMetadata(meta);
+      setPreviewImageUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(imageBlob);
+      });
+      setStep(1);
+      setView('create');
+    } catch (e) {
+      setCaptureError(e instanceof Error ? e.message : 'Capture failed');
+    } finally {
+      setCaptureLoading(false);
+    }
+  };
+
+  const nextStep = () => {
+    if (step < 3) setStep(step + 1);
   };
 
   const prevStep = () => {
-    if (step === 2) {
+    if (step === 1) {
       resetCaptureState();
+      setView('home');
+      return;
     }
-    if (step > 1) setStep(step - 1);
+    setStep(step - 1);
   };
 
   const handleSubmit = () => {
@@ -165,26 +153,6 @@ export default function App() {
   const renderStep = () => {
     switch (step) {
       case 1:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white">Link to capture</h2>
-            {captureError ? (
-              <p className="text-sm text-red-400 bg-red-950/50 border border-red-800 rounded p-2">
-                {captureError}
-              </p>
-            ) : null}
-
-            <input
-              type="url"
-              className="w-full border border-gray-300 rounded p-2 text-white bg-gray-700 placeholder-gray-400"
-              placeholder="https://example.com/page"
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-            />
-          </div>
-        );
-
-      case 2:
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-white">Screenshot Preview</h2>
@@ -230,7 +198,7 @@ export default function App() {
           </div>
         );
 
-      case 3:
+      case 2:
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-white">Analysis & Admissibility</h2>
@@ -266,7 +234,7 @@ export default function App() {
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-white text-center mb-6">Review</h2>
@@ -398,11 +366,8 @@ export default function App() {
     return (
       <div className="h-screen w-screen bg-slate-900 flex flex-col">
         <div className="flex-1 flex flex-col p-8 overflow-hidden">
-          <p className="text-xs text-slate-500 mb-2">
-            API: {apiMode} · <span className="font-mono text-slate-400">{apiBase}</span>
-          </p>
-          <div className="flex justify-between mb-8">
-            {[1, 2, 3, 4].map((s) => (
+          <div className="flex justify-between mb-8 gap-2">
+            {[1, 2, 3].map((s) => (
               <div key={s} className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex justify-center items-center font-bold ${
@@ -416,7 +381,7 @@ export default function App() {
                   {s < step ? '✓' : s}
                 </div>
                 <p className="text-xs text-gray-300 mt-2 text-center">
-                  {['Info', 'Screenshot', 'Analysis', 'Review'][s - 1]}
+                  {CREATE_STEP_LABELS[s - 1]}
                 </p>
               </div>
             ))}
@@ -425,22 +390,20 @@ export default function App() {
           <div className="flex-1 overflow-y-auto mb-8">{renderStep()}</div>
 
           <div className="flex justify-between gap-4">
-            {step > 1 && (
-              <button
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-                onClick={prevStep}
-                disabled={captureLoading}
-              >
-                Back
-              </button>
-            )}
-            {step < 4 && (
+            <button
+              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              onClick={prevStep}
+              disabled={captureLoading}
+            >
+              Back
+            </button>
+            {step < 3 && (
               <button
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                onClick={() => void nextStep()}
-                disabled={captureLoading || (step === 1 && !formData.url.trim())}
+                onClick={nextStep}
+                disabled={captureLoading}
               >
-                {step === 1 && captureLoading ? 'Capturing…' : 'Next'}
+                Next
               </button>
             )}
           </div>
@@ -455,7 +418,6 @@ export default function App() {
         <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8 overflow-y-auto">
           <div className="bg-slate-800 p-8 rounded-lg max-w-lg w-full">
             <h1 className="text-2xl font-bold text-white mb-2">Your evidence</h1>
-            <p className="text-gray-400 text-xs font-mono mb-4 break-all">{apiBase}</p>
 
             <div className="bg-gray-700 rounded mb-4 overflow-hidden">
               <img src={accessImageUrl} alt="Stored evidence" className="w-full object-contain max-h-80 bg-black" />
@@ -508,11 +470,10 @@ export default function App() {
           </button>
 
           <h1 className="text-2xl font-bold text-white mb-2">Access My Files</h1>
-          <p className="text-gray-300 mb-2">
+          <p className="text-gray-300 mb-6">
             Enter your evidence code (from capture: <span className="font-mono text-slate-200">XXXX-YYYYYYYY</span>) to
             load metadata and the PNG screenshot.
           </p>
-          <p className="text-xs text-slate-500 font-mono mb-6 break-all">{apiBase}</p>
 
           {accessError ? (
             <p className="text-sm text-red-400 bg-red-950/50 border border-red-800 rounded p-2 mb-4">{accessError}</p>
@@ -539,35 +500,64 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-slate-900 flex flex-col items-center justify-center p-8">
-      <div className="bg-slate-800 p-12 rounded-lg max-w-md w-full text-center">
-        <img src="/icon.png" alt="Logo" className="w-20 h-20 mx-auto mb-6" />
-        <h1 className="text-3xl font-bold text-white mb-2">Hi, we're sorry for what happened.</h1>
-        <p className="text-gray-300 mb-2">Let us help.</p>
-        <p className="text-xs text-slate-500 mb-8 font-mono break-all">{apiBase}</p>
-        <p className="text-xs text-slate-600 mb-8">{apiMode}</p>
+    <div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center px-6 py-16">
+      <div className="w-full max-w-lg flex flex-col items-center text-center">
+        <img
+          src="/icon.png"
+          alt=""
+          className="mx-auto block h-10 w-auto max-w-[min(100%,22rem)] object-contain mb-10 opacity-95"
+        />
 
-        <div className="space-y-4">
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded text-lg"
-            onClick={() => {
-              setView('create');
-              setStep(1);
+        <label htmlFor="home-url" className="sr-only">
+          Page URL to capture
+        </label>
+        {captureError ? (
+          <p className="w-full text-sm text-red-300 bg-red-950/40 border border-red-800/80 rounded-lg px-3 py-2 mb-4 text-left">
+            {captureError}
+          </p>
+        ) : null}
+
+        <div className="w-full rounded-2xl border border-slate-700/80 bg-slate-900/60 shadow-xl shadow-slate-950/50 backdrop-blur-sm p-2 pl-4 flex items-center gap-3 ring-1 ring-white/5">
+          <span className="text-slate-500 shrink-0 select-none" aria-hidden>
+            ↗
+          </span>
+          <input
+            id="home-url"
+            type="url"
+            autoComplete="url"
+            inputMode="url"
+            className="flex-1 min-w-0 bg-transparent border-0 py-3 text-base text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0"
+            placeholder="Paste a link to capture"
+            value={formData.url}
+            onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && formData.url.trim() && !captureLoading) {
+                void runCaptureFromUrl();
+              }
             }}
-          >
-            Create New Report
-          </button>
-
+          />
           <button
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded text-lg"
+            type="button"
+            className="shrink-0 rounded-xl bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            onClick={() => void runCaptureFromUrl()}
+            disabled={!formData.url.trim() || captureLoading}
+          >
+            {captureLoading ? '…' : 'Go'}
+          </button>
+        </div>
+
+        <p className="mt-10 text-sm text-slate-500">
+          <button
+            type="button"
+            className="text-slate-400 underline underline-offset-4 decoration-slate-600 hover:text-slate-300 hover:decoration-slate-500 transition-colors"
             onClick={() => {
               resetAccessState();
               setView('access');
             }}
           >
-            Access My Files
+            I am a lawyer
           </button>
-        </div>
+        </p>
       </div>
     </div>
   );
