@@ -75,13 +75,13 @@ except:
 # Expand or narrow these to match whatever story you want to tell the judges.
  
 CATEGORIES = [
-"Sexual or intimate imagery (real or AI-generated)",  
+"Sexual or intimate imagery",  
 
 "Sexualized or explicit content involving a real identifiable person (potentially AI-generated)",  
 
 "Synthetic or AI-generated content impersonating a real person", 
 
-"Otherwise harassing",
+"Harassing",
 
 "Benign or non_harassing"
 ]
