@@ -835,11 +835,13 @@ export default function App() {
           <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Evidence Locker</span>
         </div>
 
-        <img
-          src="/icon.png"
-          alt=""
-          className="mx-auto mb-0 block h-60 w-auto max-w-[min(100%,22rem)] object-contain opacity-95"
-        />
+        <div className="overflow-hidden" style={{ height: '13rem' }}>
+          <img
+            src="/logo.png"
+            alt=""
+            className="mx-auto block h-60 w-auto max-w-[min(100%,22rem)] object-contain opacity-95 scale-[1.12]"
+          />
+        </div>
 
         <h1 className="text-xl font-semibold tracking-tight text-slate-100">Seal a page or an image</h1>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-500">
