@@ -34,32 +34,40 @@ type LawyerProfile = {
   initial: string;
   accent: string;
   avatar: string;
+  photo?: string;
+  email?: string;
 };
 
 const LAWYERS: LawyerProfile[] = [
   {
-    name: 'Sarah Martinez, Esq.',
-    focus: 'Cybercrime & digital rights',
-    hint: 'Warm, clear guidance when content was shared or altered online.',
-    initial: 'SM',
+    name: 'Riana Pfefferkorn',
+    focus: 'Internet law & digital rights',
+    hint: 'Research scholar at Stanford Internet Observatory focused on encryption, surveillance, and online content.',
+    initial: 'RP',
+    accent: 'border-l-rose-500/70',
+    avatar: 'bg-rose-500/15 text-rose-100 ring-1 ring-rose-400/25',
+    photo: '/pfefferkorn.png',
+    email: 'riana@stanford.edu',
+  },
+  {
+    name: 'Scott Sugarman',
+    focus: 'Criminal defense & civil rights',
+    hint: 'Experienced trial attorney handling cases involving digital evidence and online harm.',
+    initial: 'SS',
     accent: 'border-l-amber-500/70',
     avatar: 'bg-amber-500/15 text-amber-100 ring-1 ring-amber-400/25',
+    photo: '/sugarman.png',
+    email: 'scott@sugarmanandcannon.com',
   },
   {
-    name: 'James Chen, Esq.',
-    focus: 'Media law & defamation',
-    hint: 'Helps you understand options before anything is filed.',
-    initial: 'JC',
+    name: 'Mark Boskovich',
+    focus: 'Privacy & technology law',
+    hint: 'Focuses on privacy violations, data rights, and cases involving harmful online content.',
+    initial: 'MB',
     accent: 'border-l-sky-500/70',
     avatar: 'bg-sky-500/15 text-sky-100 ring-1 ring-sky-400/25',
-  },
-  {
-    name: 'Rachel Thompson, Esq.',
-    focus: 'AI & deepfake litigation',
-    hint: 'Experience with synthetic media and authenticity questions.',
-    initial: 'RT',
-    accent: 'border-l-violet-500/70',
-    avatar: 'bg-violet-500/15 text-violet-100 ring-1 ring-violet-400/25',
+    photo: '/boskovich.png',
+    email: 'mboskovich@cbalawfirm.com',
   },
 ];
 
@@ -86,10 +94,14 @@ function LawyerCards({ idPrefix }: { idPrefix: string }) {
           className={`${PANEL} flex gap-4 border-l-4 p-4 text-left transition hover:bg-slate-900/75 ${L.accent}`}
         >
           <div
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${L.avatar}`}
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold overflow-hidden ${L.photo ? '' : L.avatar}`}
             aria-hidden
           >
-            {L.initial}
+            {L.photo ? (
+              <img src={L.photo} alt={L.name} className="h-full w-full object-cover" />
+            ) : (
+              L.initial
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-white">{L.name}</p>
@@ -98,13 +110,23 @@ function LawyerCards({ idPrefix }: { idPrefix: string }) {
             <p className="mt-2 text-xs font-medium text-emerald-400/90">
               Free initial consultation
             </p>
-            <button
-              type="button"
-              id={`${idPrefix}-lawyer-${i}`}
-              className="mt-3 text-sm font-medium text-sky-400/95 underline-offset-4 hover:text-sky-300 hover:underline"
-            >
-              Request intro
-            </button>
+            {L.email ? (
+              <a
+                href={`mailto:${L.email}`}
+                id={`${idPrefix}-lawyer-${i}`}
+                className="mt-3 inline-block text-sm font-medium text-sky-400/95 underline-offset-4 hover:text-sky-300 hover:underline"
+              >
+                {L.email}
+              </a>
+            ) : (
+              <button
+                type="button"
+                id={`${idPrefix}-lawyer-${i}`}
+                className="mt-3 text-sm font-medium text-sky-400/95 underline-offset-4 hover:text-sky-300 hover:underline"
+              >
+                Request intro
+              </button>
+            )}
           </div>
         </div>
       ))}
