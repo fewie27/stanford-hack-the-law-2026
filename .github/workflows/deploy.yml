@@ -13,21 +13,20 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Add server to known hosts
+      - name: Deploy to Staging Server
         run: |
-          ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SERVER_IP }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to Staging
-        run: |
-          ssh -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} bash << 'EOF'
-            set -euo pipefail
-            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} << 'EOF'
             cd /srv/docker/container/app/STAGE
+            eval $(ssh-agent -s)
+            ssh-add ../.ssh/id_git
             git pull origin main
             docker compose -f docker-compose.yml up --build -d
           EOF
@@ -37,23 +36,20 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Add server to known hosts
+      - name: Deploy to Production Server
         run: |
-          ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SERVER_IP }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to Production
-        run: |
-          TAG="${{ github.ref_name }}"
-          ssh -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} bash << EOF
-            set -euo pipefail
-            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_git -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
-            cd /srv/docker/container/app/STAGE
-            git fetch --tags
-            git checkout tags/${TAG}
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_IP }} << 'EOF'
+            cd /srv/docker/container/app/PROD
+            eval $(ssh-agent -s)
+            ssh-add ../.ssh/id_git
+            git pull origin ${{ github.ref }}
             docker compose -f docker-compose.yml up --build -d
           EOF
