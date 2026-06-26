@@ -5,12 +5,19 @@ services:
       dockerfile: Dockerfile
       args:
         EVIDENCE_API_BASE_URL: ${EVIDENCE_API_BASE_URL:-}
-    ports:
-      - "80:80"
     depends_on:
       backend:
         condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hacklaw-web-${ENVIRONMENT}.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.hacklaw-web-${ENVIRONMENT}.entrypoints=websecure"
+      - "traefik.http.routers.hacklaw-web-${ENVIRONMENT}.tls.certresolver=cloudflare"
+      - "traefik.http.routers.hacklaw-web-${ENVIRONMENT}.service=hacklaw-web-${ENVIRONMENT}"
+      - "traefik.http.services.hacklaw-web-${ENVIRONMENT}.loadbalancer.server.port=80"
     restart: unless-stopped
+    networks:
+      - web
 
   backend:
     env_file:
@@ -20,8 +27,6 @@ services:
       dockerfile: Dockerfile
     # Chromium needs enough shared memory or the process can exit; then nothing listens on 8000.
     shm_size: "1gb"
-    ports:
-      - "8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
       interval: 15s
@@ -31,9 +36,22 @@ services:
     environment:
       EVIDENCE_DATA_DIR: /data/vaults
       EVIDENCE_APP_PEPPER: ${EVIDENCE_APP_PEPPER:-change-me-in-production}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hacklaw-backend-${ENVIRONMENT}.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.hacklaw-backend-${ENVIRONMENT}.entrypoints=websecure"
+      - "traefik.http.routers.hacklaw-backend-${ENVIRONMENT}.tls.certresolver=cloudflare"
+      - "traefik.http.routers.hacklaw-backend-${ENVIRONMENT}.service=hacklaw-backend-${ENVIRONMENT}"
+      - "traefik.http.services.hacklaw-backend-${ENVIRONMENT}.loadbalancer.server.port=8000"
     volumes:
       - evidence_vaults:/data/vaults
     restart: unless-stopped
+    networks:
+      - web
 
 volumes:
   evidence_vaults:
+
+networks:
+  web:
+    external: true
