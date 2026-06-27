@@ -1,5 +1,12 @@
 # Stanford Hack the Law 2026
 
+Contributors (alphabetical order):
+- Adèle Boreau-Potocki
+- Archit Lohani
+- Dora Gan
+- Felix Wiegand
+- Kristi Sun
+
 This repository contains a small full-stack project for an **evidence locker**: a place to preserve **non-editable** records of online harassment (for example, a faithful screenshot of a public web page linked by URL). The goal is to give people a simple way to capture and later retrieve evidence using a short code, without leaving decrypted material on the server after retrieval.
 
 ## Environment
